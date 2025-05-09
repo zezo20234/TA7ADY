@@ -1,1 +1,92 @@
-hgrbfbeyfvbyrgfgfryfgeuyg
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Form with Daily Counter</title>
+  <style>
+    form {
+      width: 50%;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f4f4f4;
+      border-radius: 8px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      margin-bottom: 20px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 15px 30px;
+      font-size: 18px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .counter-box {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="counter-box">
+    Daily Count: <span id="counter">0</span>
+  </div>
+
+  <form action="https://formsubmit.co/zezo_z4ever@outlook.com" method="POST" >
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" aria-rowcount="3" placeholder="Enter your name"/>
+
+    <label for="message">report:</label>
+    <textarea id="report" name="report" rows="2" placeholder="report"></textarea>
+
+    <label for="report on who">report on who:</label>
+    <textarea id="report on who" name="report on who" rows="2" placeholder="report on who"></textarea>
+
+    <label for="report details">report details:</label>
+    <textarea id="report details" name="report details" rows="3" placeholder="report details"></textarea>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    let storedCount = localStorage.getItem('dailyCount');
+    let lastUpdated = localStorage.getItem('lastUpdated');
+    const today = new Date().toDateString();
+
+    if (!storedCount) {
+      storedCount = 0;
+    }
+
+    if (lastUpdated !== today) {
+      storedCount = parseInt(storedCount) + 1;
+      localStorage.setItem('dailyCount', storedCount);
+      localStorage.setItem('lastUpdated', today);
+    }
+
+    document.getElementById('counter').textContent = storedCount;
+  </script>
+<span><p>MADE BY ZEYAD AND CHATGPT</p>
+  V.1.5
+</span>
+</body>
+</html>
