@@ -54,7 +54,7 @@
     Daily Count: <span id="counter">0</span>
   </div>
 
-  <form action="https://formsubmit.co/zezo_z4ever@outlook.com" method="POST">
+  <form action="https://formsubmit.co/zezo_z4ever@outlook.com" method="post" id="myForm">
     <label for="name">Name:</label>
     <input type="text" id="name" name="name" placeholder="Enter your name" />
 
@@ -73,22 +73,21 @@
     <label for="credits">How many credits:</label>
     <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="credits" />
     <br><hr>
-
-    <button class="colorBtn" type="submit">Submit</button>
+    <input class="colorBtn" type="submit" value="SUBMIT" />
   </form>
 
   <script>
-    // Change button color on click (toggle green/red)
     const btn = document.querySelector('.colorBtn');
-    btn.addEventListener('click', function(event) {
-      // Prevent form submit for demo so you can see color change
-      event.preventDefault();
+    const form = document.getElementById('myForm');
 
+    btn.addEventListener('click', () => {
+      // Toggle button color
       if (btn.style.backgroundColor === 'green') {
         btn.style.backgroundColor = 'red';
       } else {
         btn.style.backgroundColor = 'green';
       }
+      // Form will submit normally after this click
     });
 
     // Daily count logic
@@ -109,6 +108,6 @@
   <p>V.7.5</p>
   <p>MADE ON 5/5/2025</p>
   <p>CHALLENGE:</p>
-  
+
 </body>
 </html>
