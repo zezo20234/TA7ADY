@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="stylesheet" href="css/master.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Form with Daily Counter</title>
   <style>
     form {
@@ -16,6 +15,7 @@
 
     input[type="text"],
     input[type="email"],
+    input[type="number"],
     textarea {
       width: 100%;
       padding: 15px;
@@ -25,51 +25,19 @@
       border-radius: 5px;
     }
 
-/* Base Style */
-.explode-btn {
-  padding: 15px 30px;
-  font-size: 18px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-}
+    .colorBtn {
+      padding: 15px 30px;
+      font-size: 18px;
+      background-color: red;   /* default red */
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
 
-/* Hover */
-.explode-btn:hover {
-  background-color: #45a049;
-  transform: scale(1.05);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-/* Click (explode) */
-.explode-btn:active {
-  animation: explode 0.4s forwards;
-}
-
-@keyframes explode {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.4) rotate(15deg);
-    opacity: 0.7;
-  }
-  100% {
-    transform: scale(0) rotate(720deg);
-    opacity: 0;
-  }
-}
-
-
-    button:hover {
-      background-color: #45a049;
+    .colorBtn:hover {
+      filter: brightness(1.1);
     }
 
     .counter-box {
@@ -86,39 +54,47 @@
     Daily Count: <span id="counter">0</span>
   </div>
 
-  <form action="https://formsubmit.co/zezo_z4ever@outlook.com" method="POST" >
+  <form action="https://formsubmit.co/zezo_z4ever@outlook.com" method="POST">
     <label for="name">Name:</label>
-    <input type="text" id="name" name="name" aria-rowcount="3" placeholder="Enter your name"/>
+    <input type="text" id="name" name="name" placeholder="Enter your name" />
 
-    <label for="message">report:</label>
+    <label for="report">Report:</label>
     <textarea id="report" name="report" rows="2" placeholder="report"></textarea>
 
-    <label for="report on who">report on who:</label>
-    <textarea id="report on who" name="report on who" rows="2" placeholder="report on who"></textarea>
+    <label for="reportWho">Report on who:</label>
+    <textarea id="reportWho" name="report_on_who" rows="2" placeholder="report on who"></textarea>
 
-    <label for="report details">report details:</label>
-    <textarea id="report details" name="report details" rows="3" placeholder="report details"></textarea>
+    <label for="reportDetails">Report details:</label>
+    <textarea id="reportDetails" name="report_details" rows="3" placeholder="report details"></textarea>
 
-    <label for="give to who credits">report details:</label>
-    <textarea id="give to who credits" name="give to who credits" rows="3" placeholder="give to who credits"></textarea>
+    <label for="giveCredits">Give to who credits:</label>
+    <textarea id="giveCredits" name="give_to_who_credits" rows="3" placeholder="give to who credits"></textarea>
 
-  <label for="how many credits">how many credits:</label>
-    <input step="100" min="100" max="5000" type="number" id="how many credits" how many credits="how many credits" placeholder="credits"/>
-<br>
-<hr>
-    <button class="explode-btn" type="submit">Submit</button>
+    <label for="credits">How many credits:</label>
+    <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="credits" />
+    <br><hr>
+
+    <button class="colorBtn" type="submit">Submit</button>
   </form>
 
-
   <script>
+    // Change button color on click (toggle green/red)
+    const btn = document.querySelector('.colorBtn');
+    btn.addEventListener('click', function(event) {
+      // Prevent form submit for demo so you can see color change
+      event.preventDefault();
 
-    let storedCount = localStorage.getItem('dailyCount');
+      if (btn.style.backgroundColor === 'green') {
+        btn.style.backgroundColor = 'red';
+      } else {
+        btn.style.backgroundColor = 'green';
+      }
+    });
+
+    // Daily count logic
+    let storedCount = localStorage.getItem('dailyCount') || 0;
     let lastUpdated = localStorage.getItem('lastUpdated');
     const today = new Date().toDateString();
-
-    if (!storedCount) {
-      storedCount = 0;
-    }
 
     if (lastUpdated !== today) {
       storedCount = parseInt(storedCount) + 1;
@@ -128,9 +104,11 @@
 
     document.getElementById('counter').textContent = storedCount;
   </script>
-<p>MADE BY ZEYAD AND CHATGPT</p>
-<P>V.7.5</P>
-<P>MADE ON 5/5/2025</P>
-<P>CHALLENGE:</P>
+
+  <p>MADE BY ZEYAD AND CHATGPT</p>
+  <p>V.7.5</p>
+  <p>MADE ON 5/5/2025</p>
+  <p>CHALLENGE:</p>
+  
 </body>
 </html>
