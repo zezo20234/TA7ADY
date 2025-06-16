@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Form with iOS Support</title>
+
+  <!-- ✅ iOS Home Screen Icon -->
+  <link rel="apple-touch-icon" href="apple-icon.jpg">
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -98,11 +102,11 @@
     <label for="reportDetails">Report details:</label>
     <textarea id="reportDetails" name="report_details" rows="3" placeholder="Explain what happened..."></textarea>
 
-<label for="giveCredits">Give credits to:</label>
-<textarea id="giveCredits" name="give_to_who_credits" rows="3" placeholder="Who should get credit?"></textarea>
+    <label for="giveCredits">Give credits to:</label>
+    <textarea id="giveCredits" name="give_to_who_credits" rows="3" placeholder="Who should get credit?"></textarea>
 
-<label for="credits">How many credits:</label>
-<input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
+    <label for="credits">How many credits:</label>
+    <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
 
     <input class="colorBtn" type="submit" value="SUBMIT">
   </form>
