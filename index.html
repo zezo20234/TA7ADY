@@ -2,29 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Form with Daily Counter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Form with iOS Support</title>
   <style>
     body {
       font-family: Arial, sans-serif;
+      background-color: #fff59d; /* Yellow background */
       margin: 0;
-      padding: 0 10px;
-      background-color: #f4f4f4;
+      padding: 20px;
+    }
+
+    .counter-box {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
     }
 
     form {
       max-width: 500px;
-      margin: 0 auto;
+      margin: auto;
+      background-color: white;
       padding: 20px;
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
 
     label {
+      font-weight: bold;
       display: block;
       margin-bottom: 5px;
-      font-weight: bold;
     }
 
     input[type="text"],
@@ -32,94 +39,92 @@
     input[type="number"],
     textarea {
       width: 100%;
-      padding: 14px;
-      font-size: 16px;
+      padding: 12px;
       margin-bottom: 15px;
+      font-size: 16px;
       border: 1px solid #ccc;
-      border-radius: 6px;
-      box-sizing: border-box;
+      border-radius: 5px;
+      background-color: white;
+      transition: background-color 0.3s;
     }
 
-    .submitBtn {
-      width: 100%;
-      padding: 15px;
+    input:focus,
+    textarea:focus {
+      background-color: pink;
+      outline: none;
+    }
+
+    .colorBtn {
+      padding: 15px 30px;
       font-size: 18px;
       background-color: red;
       color: white;
       border: none;
-      border-radius: 30px;
+      border-radius: 50px;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      width: 100%;
     }
 
-    .submitBtn:active {
-      background-color: green;
-    }
-
-    .counter-box {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 20px;
-      font-weight: bold;
+    .colorBtn:hover {
+      filter: brightness(1.1);
     }
 
     footer {
       text-align: center;
-      font-size: 14px;
       margin-top: 30px;
-      color: #666;
     }
   </style>
 </head>
 <body>
 
   <div class="counter-box">
-    Daily Count: <span id="counter">0</span>
+    <h1>⚠️ please report 15 minutes after the incedent ⚠️</h1> <span id="cou"></span>
   </div>
 
   <form action="https://formsubmit.co/zezo_z4ever@outlook.com" method="POST">
     <label for="name">Name:</label>
-    <input type="text" id="name" name="name" required placeholder="Enter your name" />
+    <input type="text" id="name" name="name" placeholder="Enter your name" required>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" placeholder="Enter your email" required>
 
     <label for="report">Report:</label>
-    <textarea id="report" name="report" rows="2" required placeholder="Report"></textarea>
+    <textarea id="report" name="report" rows="2" placeholder="Your report here"></textarea>
 
     <label for="reportWho">Report on who:</label>
-    <textarea id="reportWho" name="report_on_who" rows="2" placeholder="Report on who"></textarea>
+    <textarea id="reportWho" name="report_on_who" rows="2" placeholder="Name of who you report on"></textarea>
 
     <label for="reportDetails">Report details:</label>
-    <textarea id="reportDetails" name="report_details" rows="3" placeholder="Report details"></textarea>
+    <textarea id="reportDetails" name="report_details" rows="3" placeholder="Explain what happened..."></textarea>
 
-    <label for="giveCredits">Give credits to who:</label>
-    <textarea id="giveCredits" name="give_to_who_credits" rows="2" placeholder="Give to who credits"></textarea>
+<label for="giveCredits">Give credits to:</label>
+<textarea id="giveCredits" name="give_to_who_credits" rows="3" placeholder="Who should get credit?"></textarea>
 
-    <label for="credits">How many credits:</label>
-    <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits" />
+<label for="credits">How many credits:</label>
+<input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
 
-    <!-- Submit button -->
-    <button class="submitBtn" type="submit">Submit</button>
+    <input class="colorBtn" type="submit" value="SUBMIT">
   </form>
 
   <footer>
     <p>MADE BY ZEYAD AND CHATGPT</p>
-    <p>V.7.5 | MADE ON 5/5/2025</p>
-    <p>CHALLENGE:</p>
+    <p>Version 8.5 | Made on 5/5/2025</p>
   </footer>
 
   <script>
-    // DAILY COUNTER
-    const today = new Date().toDateString();
-    let storedCount = localStorage.getItem('dailyCount');
+    // Counter logic
+    let storedCount = localStorage.getItem('dailyCount') || 0;
     let lastUpdated = localStorage.getItem('lastUpdated');
+    const today = new Date().toDateString();
 
-    if (!storedCount || lastUpdated !== today) {
-      storedCount = parseInt(storedCount || 0) + 1;
+    if (lastUpdated !== today) {
+      storedCount = parseInt(storedCount) + 1;
       localStorage.setItem('dailyCount', storedCount);
       localStorage.setItem('lastUpdated', today);
     }
 
     document.getElementById('counter').textContent = storedCount;
   </script>
-
 </body>
 </html>
