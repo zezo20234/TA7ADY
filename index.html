@@ -57,32 +57,71 @@
       outline: none;
     }
 
+    /* Updated submit button styles */
     .colorBtn {
       padding: 15px 30px;
       font-size: 18px;
-      background-color: red;
+      background-color: green; /* changed to green */
       color: white;
       border: none;
       border-radius: 50px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: none; /* disable hover transition */
       width: 100%;
     }
 
     .colorBtn:hover {
-      filter: brightness(1.1);
+      filter: none; /* no hover effect */
     }
 
-    footer {
-      text-align: center;
-      margin-top: 30px;
+    /* Bounce animation */
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-15px);
+      }
+      60% {
+        transform: translateY(-8px);
+      }
+    }
+
+    /* Animate bounce on click */
+    .colorBtn:active {
+      animation: bounce 0.6s;
+    }
+
+    /* Reset button styles and animation */
+    #resetButton {
+      padding: 20px 40px;
+      background-color: red;
+      color: #fff;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease;
+      border-radius: 50px;
+    }
+
+    #resetButton.break {
+      animation: break-apart 0.6s forwards;
+    }
+
+    @keyframes break-apart {
+      0% { transform: translate(0,0) rotate(0); opacity: 1; }
+      30% { transform: translate(-10px, -10px) rotate(-10deg); opacity: 0.8; }
+      60% { transform: translate(10px, 10px) rotate(10deg); opacity: 0.5; }
+      100% { transform: translate(100px, 100px) rotate(60deg); opacity: 0; }
     }
   </style>
 </head>
 <body>
 
   <div class="counter-box">
-    <h1>⚠️ please report 15 minutes after the incident ⚠️</h1>
+    <h1>⚠ please report 15 minutes after the incident ⚠</h1>
     <span id="counter"></span>
   </div>
 
@@ -109,6 +148,9 @@
     <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
 
     <input class="colorBtn" type="submit" value="SUBMIT">
+    <br>
+    <br>
+    <button id="resetButton" type="reset">Reset</button>
   </form>
 
   <footer>
@@ -131,5 +173,16 @@
 
     document.getElementById('counter').textContent = storedCount;
   </script>
+
+  <script>
+    document.getElementById("resetButton").addEventListener("click", function() {
+      let btn = this;
+      btn.classList.add("break");
+      setTimeout(() => {
+        btn.classList.remove("break");
+      }, 700);
+    });
+  </script>
+
 </body>
 </html>
