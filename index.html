@@ -46,13 +46,6 @@
       font-size: 24px;
       font-weight: bold;
     }
-    div {
-      border-radius: 30px;
-      background-color: green;
-      border: 2px solid red;
-      margin-right: 950px;
-      padding: 5px;
-    }
   </style>
 </head>
 <body>
@@ -78,10 +71,7 @@
     <textarea id="giveCredits" name="give_to_who_credits" rows="3" placeholder="give to who credits"></textarea>
 
     <label for="credits">How many credits:</label>
-    <input type="number" required id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="credits" />
-
-    <label for="email">email:</label>
-    <input type="email" id="credits" name="email"  placeholder="email" />
+    <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="credits" />
     <br><hr>
     <input class="colorBtn" type="submit" value="SUBMIT" />
   </form>
@@ -113,11 +103,11 @@
 
     document.getElementById('counter').textContent = storedCount;
   </script>
-<div>
+
   <p>MADE BY ZEYAD AND CHATGPT</p>
   <p>V.7.5</p>
   <p>MADE ON 5/5/2025</p>
   <p>CHALLENGE:</p>
-</div>
+
 </body>
 </html>
