@@ -5,12 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Form with Daily Counter</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0 10px;
+      background-color: #f4f4f4;
+    }
+
     form {
-      width: 50%;
+      max-width: 500px;
       margin: 0 auto;
       padding: 20px;
-      background-color: #f4f4f4;
-      border-radius: 8px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
     }
 
     input[type="text"],
@@ -18,33 +32,42 @@
     input[type="number"],
     textarea {
       width: 100%;
-      padding: 15px;
+      padding: 14px;
       font-size: 16px;
-      margin-bottom: 20px;
-      border: 2px solid #ccc;
-      border-radius: 5px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
     }
 
-    .colorBtn {
-      padding: 15px 30px;
+    .submitBtn {
+      width: 100%;
+      padding: 15px;
       font-size: 18px;
-      background-color: red;   /* default red */
+      background-color: red;
       color: white;
       border: none;
-      border-radius: 50px;
+      border-radius: 30px;
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
 
-    .colorBtn:hover {
-      filter: brightness(1.1);
+    .submitBtn:active {
+      background-color: green;
     }
 
     .counter-box {
       text-align: center;
       margin-top: 20px;
-      font-size: 24px;
+      font-size: 20px;
       font-weight: bold;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 30px;
+      color: #666;
     }
   </style>
 </head>
@@ -54,60 +77,49 @@
     Daily Count: <span id="counter">0</span>
   </div>
 
-  <form action="https://formsubmit.co/zezo_z4ever@outlook.com" method="post" id="myForm">
+  <form action="https://formsubmit.co/zezo_z4ever@outlook.com" method="POST">
     <label for="name">Name:</label>
-    <input type="text" id="name" name="name" placeholder="Enter your name" />
+    <input type="text" id="name" name="name" required placeholder="Enter your name" />
 
     <label for="report">Report:</label>
-    <textarea id="report" name="report" rows="2" placeholder="report"></textarea>
+    <textarea id="report" name="report" rows="2" required placeholder="Report"></textarea>
 
     <label for="reportWho">Report on who:</label>
-    <textarea id="reportWho" name="report_on_who" rows="2" placeholder="report on who"></textarea>
+    <textarea id="reportWho" name="report_on_who" rows="2" placeholder="Report on who"></textarea>
 
     <label for="reportDetails">Report details:</label>
-    <textarea id="reportDetails" name="report_details" rows="3" placeholder="report details"></textarea>
+    <textarea id="reportDetails" name="report_details" rows="3" placeholder="Report details"></textarea>
 
-    <label for="giveCredits">Give to who credits:</label>
-    <textarea id="giveCredits" name="give_to_who_credits" rows="3" placeholder="give to who credits"></textarea>
+    <label for="giveCredits">Give credits to who:</label>
+    <textarea id="giveCredits" name="give_to_who_credits" rows="2" placeholder="Give to who credits"></textarea>
 
     <label for="credits">How many credits:</label>
-    <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="credits" />
-    <br><hr>
-    <input class="colorBtn" type="submit" value="SUBMIT" />
+    <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits" />
+
+    <!-- Submit button -->
+    <button class="submitBtn" type="submit">Submit</button>
   </form>
 
+  <footer>
+    <p>MADE BY ZEYAD AND CHATGPT</p>
+    <p>V.7.5 | MADE ON 5/5/2025</p>
+    <p>CHALLENGE:</p>
+  </footer>
+
   <script>
-    const btn = document.querySelector('.colorBtn');
-    const form = document.getElementById('myForm');
-
-    btn.addEventListener('click', () => {
-      // Toggle button color
-      if (btn.style.backgroundColor === 'green') {
-        btn.style.backgroundColor = 'red';
-      } else {
-        btn.style.backgroundColor = 'green';
-      }
-      // Form will submit normally after this click
-    });
-
-    // Daily count logic
-    let storedCount = localStorage.getItem('dailyCount') || 0;
-    let lastUpdated = localStorage.getItem('lastUpdated');
+    // DAILY COUNTER
     const today = new Date().toDateString();
+    let storedCount = localStorage.getItem('dailyCount');
+    let lastUpdated = localStorage.getItem('lastUpdated');
 
-    if (lastUpdated !== today) {
-      storedCount = parseInt(storedCount) + 1;
+    if (!storedCount || lastUpdated !== today) {
+      storedCount = parseInt(storedCount || 0) + 1;
       localStorage.setItem('dailyCount', storedCount);
       localStorage.setItem('lastUpdated', today);
     }
 
     document.getElementById('counter').textContent = storedCount;
   </script>
-
-  <p>MADE BY ZEYAD AND CHATGPT</p>
-  <p>V.7.5</p>
-  <p>MADE ON 5/5/2025</p>
-  <p>CHALLENGE:</p>
 
 </body>
 </html>
