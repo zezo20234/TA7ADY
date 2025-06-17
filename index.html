@@ -28,38 +28,20 @@
       border-radius: 30px;
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       color: #fff;
     }
 
-    .login-box input,
-    input[type="text"],
-    input[type="email"],
-    input[type="number"],
-    textarea {
+    .login-box input, .login-box button {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       margin: 10px 0;
       border-radius: 50px;
       border: 1px solid rgba(255, 255, 255, 0.3);
       background: rgba(255, 255, 255, 0.2);
       color: #fff;
       font-size: 16px;
-      backdrop-filter: blur(10px);
-    }
-
-    .login-box button {
-      width: 100%;
-      padding: 12px;
-      font-size: 18px;
-      border-radius: 50px;
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      cursor: pointer;
-      transition: background 0.3s, color 0.3s;
       backdrop-filter: blur(10px);
     }
 
@@ -75,7 +57,6 @@
       border-radius: 30px;
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       color: #fff;
@@ -86,6 +67,22 @@
       font-weight: bold;
       display: block;
       margin-bottom: 5px;
+    }
+
+    input[type="text"], input[type="email"], input[type="number"], textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      backdrop-filter: blur(10px);
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: #eee;
     }
 
     .glassBtn, #resetButton {
@@ -179,7 +176,6 @@
 </head>
 <body>
 
-  <!-- 🔓 Top-left user info box -->
   <div id="infoBox">
     <p>Credits: <span id="infoCredits">0</span></p>
     <p>Days: <span id="infoDays">0</span></p>
@@ -231,7 +227,7 @@
       <label><input type="radio" name="rating" value="5" /><span>5⭐</span></label>
     </div>
 
-    <input id="submitBtn" class="glassBtn" type="submit" value="SUBMIT">
+    <input class="glassBtn" type="submit" value="SUBMIT">
     <button id="resetButton" type="reset">Reset</button>
   </form>
 
@@ -240,13 +236,13 @@
   <footer>
     <p>MADE BY ZEYAD AND CHATGPT</p>
     <p>Version 14 | Made on 5/5/2025</p>
-    <p>Game Partners: zezo games,</p>
+    <p>Game Partners: zezo games</p>
   </footer>
 
   <script>
     const users = {
-      asser: { password: "asser2025", credits: 4,000C, days:  },
-      layan: { password: "layan999", credits: 2,000C, days:  }
+      asser: { password: "asser2025", credits: 1000, days: 30 },
+      layan: { password: "layan999", credits: 1200, days: 25 }
     };
 
     function checkLogin() {
