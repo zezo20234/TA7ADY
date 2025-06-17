@@ -3,276 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>iOS Glass Form</title>
+  <title>Secure Login</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
       background: url('ios18wall.jpg') no-repeat center center fixed;
       background-size: cover;
-    }
-
-    .login-box, form {
-      max-width: 500px;
-      margin: 40px auto;
-      padding: 25px;
-      border-radius: 30px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      color: #fff;
-    }
-
-    label {
-      font-weight: bold;
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    input[type="text"],
-    input[type="password"],
-    input[type="email"],
-    input[type="number"],
-    textarea {
-      width: 100%;
-      padding: 9px;
-      margin-bottom: 15px;
-      font-size: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50px;
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
-      backdrop-filter: blur(10px);
-    }
-
-    input::placeholder,
-    textarea::placeholder {
-      color: #eee;
-    }
-
-    .glassBtn, #resetButton {
-      padding: 15px 30px;
-      font-size: 18px;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: #fff;
-      border-radius: 50px;
-      cursor: pointer;
-      width: 100%;
-      backdrop-filter: blur(10px);
-      transition: background 0.3s, color 0.3s;
-      margin-top: 10px;
-    }
-
-    .glassBtn:hover, #resetButton:hover {
-      background: rgba(255, 255, 255, 0.3);
-      color: #000;
-    }
-
-    #form-success {
-      display: none;
-      max-width: 500px;
-      margin: 20px auto;
-      padding: 15px;
-      color: #155724;
-      background-color: #d4edda;
-      border: 1px solid #c3e6cb;
-      border-radius: 10px;
-      text-align: center;
-    }
-
-    .counter-box {
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 20px;
-      color: #fff;
-    }
-
-    footer {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      border-radius: 30px;
-      font-weight: 700;
-      width: fit-content;
-      margin: auto;
       color: white;
       text-align: center;
+      padding-top: 100px;
+    }
+    form {
+      backdrop-filter: blur(20px);
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 30px;
+      width: 90%;
+      max-width: 400px;
+      margin: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    input, textarea {
+      display: block;
+      margin: 15px auto;
       padding: 10px;
-      margin-top: 40px;
+      width: 85%;
+      border-radius: 20px;
+      border: none;
+      background: rgba(255, 255, 255, 0.3);
+      color: white;
+    }
+    input::placeholder, textarea::placeholder {
+      color: #eee;
+    }
+    button {
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255, 255, 255, 0.3);
+      color: white;
+      cursor: pointer;
+    }
+    #loginError {
+      color: red;
+      margin-top: 10px;
+    }
+    #reportSection {
+      display: none;
+    }
+    .star-rating-horizontal label {
+      margin: 0 5px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <!-- LOGIN BOX -->
-  <div class="login-box" id="loginBox">
-    <h2 style="text-align:center;">🔐 Login</h2>
-    <label for="loginUser">Username:</label>
-    <input type="text" id="loginUser" placeholder="Enter username" required />
-    <label for="loginPass">Password:</label>
-    <input type="password" id="loginPass" placeholder="Enter password" required />
-    <button class="glassBtn" onclick="checkLogin()">Login</button>
-    <p id="loginResult" style="text-align:center; margin-top:10px;"></p>
-  </div>
+  <!-- Login Form -->
+  <form id="loginForm">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+    <div id="loginError"></div>
+  </form>
 
-  <!-- FORM CONTENT (HIDDEN BY DEFAULT) -->
-  <div id="formContent" style="display:none;">
-    <div class="counter-box">
-      <h1>⚠ Please report 15 minutes after the incident ⚠</h1>
-      <span id="counter"></span>
-    </div>
-
+  <!-- Hidden after login -->
+  <div id="reportSection">
+    <h1>⚠ please report 15 minutes after the incident ⚠</h1>
     <form id="reportForm" action="https://formsubmit.co/zezo_z4ever@outlook.com" method="post">
       <input type="hidden" name="_captcha" value="false">
       <input type="hidden" name="_next" value="https://zezo20234.github.io/TA7ADY/">
 
-      <label for="name">Name:</label>
-      <input type="text" id="name" name="name" placeholder="Enter your name" required>
+      <input type="text" name="name" placeholder="Enter your name" required>
+      <textarea name="report" rows="2" placeholder="Your report here"></textarea>
+      <textarea name="report_on_who" rows="2" placeholder="Name of who you report on"></textarea>
+      <textarea name="report_details" rows="3" placeholder="Explain what happened..."></textarea>
+      <textarea name="give_to_who_credits" rows="2" placeholder="Give credits to"></textarea>
+      <input type="number" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
 
-      <label for="report">Report:</label>
-      <textarea id="report" name="report" rows="2" placeholder="Your report here"></textarea>
-
-      <label for="reportWho">Report on who:</label>
-      <textarea id="reportWho" name="report_on_who" rows="2" placeholder="Name of who you report on"></textarea>
-
-      <label for="reportDetails">Report details:</label>
-      <textarea id="reportDetails" name="report_details" rows="3" placeholder="Explain what happened..."></textarea>
-
-      <label for="giveCredits">Give credits to:</label>
-      <textarea id="giveCredits" name="give_to_who_credits" rows="3" placeholder="Who should get credit?"></textarea>
-
-      <label for="credits">How many credits:</label>
-      <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
-
-      <label for="rating">Rate this app:</label>
-      <div class="star-rating-horizontal" id="rating">
-        <label><input type="radio" name="rating" value="1" required /><span>1⭐</span></label>
-        <label><input type="radio" name="rating" value="2" /><span>2⭐</span></label>
-        <label><input type="radio" name="rating" value="3" /><span>3⭐</span></label>
-        <label><input type="radio" name="rating" value="4" /><span>4⭐</span></label>
-        <label><input type="radio" name="rating" value="5" /><span>5⭐</span></label>
+      <label>Rate this app:</label>
+      <div class="star-rating-horizontal">
+        <label><input type="radio" name="rating" value="1" required> 1⭐</label>
+        <label><input type="radio" name="rating" value="2"> 2⭐</label>
+        <label><input type="radio" name="rating" value="3"> 3⭐</label>
+        <label><input type="radio" name="rating" value="4"> 4⭐</label>
+        <label><input type="radio" name="rating" value="5"> 5⭐</label>
       </div>
 
-      <input id="submitBtn" class="glassBtn" type="submit" value="SUBMIT">
-      <button id="resetButton" type="reset">Reset</button>
+      <button type="submit">Submit</button>
     </form>
-
-    <div id="form-success">✅ Thank you! Your message has been sent.</div>
   </div>
 
-  <footer>
-    <p>MADE BY ZEYAD AND CHATGPT</p>
-    <p>Version 14 | Made on 5/5/2025</p>
-    <p>Game Partners: zezo games</p>
-  </footer>
-
-  <!-- JS SECTION -->
   <script>
-    const accounts = {
-      "asser": { password: "asser2020", role: "user" },
-      "lilly": { password: "lilly2025", role: "user" },
-      "zezo": { password: "zezo2023", role: "admin" }
-    };
+    async function fetchUsers() {
+      const response = await fetch('https://raw.githubusercontent.com/zezo20234/TA7ADY/main/user.json');
+      return await response.json();
+    }
 
-    function checkLogin() {
-      const user = document.getElementById("loginUser").value.trim();
-      const pass = document.getElementById("loginPass").value.trim();
-      const resultBox = document.getElementById("loginResult");
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const users = await fetchUsers();
+      const valid = users.find(user => user.username === username && user.password === password);
 
-      if (accounts[user] && accounts[user].password === pass) {
-        resultBox.style.color = "#90ee90";
-        resultBox.textContent = `✅ Welcome, ${user}!`;
-
-        if (accounts[user].role === "admin") {
-          openAdminDashboard();
-        } else {
-          openUserBlankPage(user);
-        }
-
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("formContent").style.display = "block";
+      if (valid) {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('reportSection').style.display = 'block';
       } else {
-        resultBox.style.color = "#ff7070";
-        resultBox.textContent = "❌ Invalid username or password.";
+        document.getElementById('loginError').textContent = '❌ Incorrect username or password';
       }
-    }
-
-    function openUserBlankPage(username) {
-      const userWin = window.open('', '_blank');
-      userWin.document.write(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>${username}'s Form</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: url('ios18wall.jpg') no-repeat center center fixed;
-      background-size: cover;
-    }
-    .login-box, form {
-      max-width: 500px;
-      margin: 40px auto;
-      padding: 25px;
-      border-radius: 30px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      color: #fff;
-    }
-    label {
-      font-weight: bold;
-      display: block;
-      margin-bottom: 5px;
-    }
-    input[type="text"],
-    input[type="password"],
-    input[type="email"],
-    input[type="number"],
-    textarea {
-      width: 100%;
-      padding: 9px;
-      margin-bottom: 15px;
-      font-size: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50px;
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
-      backdrop-filter: blur(10px);
-    }
-    input::placeholder,
-    textarea::placeholder {
-      color: #eee;
-    }
-    .glassBtn, #resetButton {
-      padding: 15px 30px;
-      font-size: 18px;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: #fff;
-      border-radius: 50px;
-      cursor: pointer;
-      width: 100%;
-      backdrop-filter: blur(10px);
-      transition: background 0.3s, color 0.3s;
-      margin-top: 10px;
-    }
-    .glassBtn:hover, #resetButton:hover {
-      background: rgba(255, 255, 255, 0.3);
-      color: #000;
-    }
-    #form-success {
-      display: none;
-      max-width: 500px;
+    });
+  </script>
+</body>
+</html>
