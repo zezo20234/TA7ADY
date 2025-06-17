@@ -3,32 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Form with iOS Support</title>
-
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>Form with Blood Effect</title>
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #fff59d; /* Yellow background */
+      background: #fff59d;
       margin: 0;
       padding: 20px;
     }
 
-    .counter-box {
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 20px;
-    }
-
     form {
+      position: relative;
       max-width: 500px;
       margin: auto;
-      background-color: white;
+      background: white;
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      overflow: hidden;
     }
 
     label {
@@ -37,85 +30,74 @@
       margin-bottom: 5px;
     }
 
-    input[type="text"],
-    input[type="email"],
-    input[type="number"],
-    textarea {
+    input, textarea {
       width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
+      padding: 10px;
+      margin-bottom: 10px;
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 5px;
-      background-color: white;
-      transition: background-color 0.3s;
     }
 
-    input:focus,
-    textarea:focus {
-      background-color: pink;
+    input:focus, textarea:focus {
+      background: pink;
       outline: none;
     }
 
-    .colorBtn {
-      padding: 15px 30px;
-      font-size: 18px;
-      background-color: green;
+    #submitButton {
+      background: green;
       color: white;
+      padding: 15px;
       border: none;
+      font-size: 18px;
       border-radius: 50px;
       cursor: pointer;
-      width: 100%;
       position: relative;
-      overflow: hidden;
-    }
-
-    .colorBtn:active {
-      animation: bounce 0.6s;
-    }
-
-    .colorBtn.shatter {
-      animation: break-apart 0.6s forwards;
-    }
-
-    @keyframes bounce {
-      0%, 20%, 50%, 80%, 100% {
-        transform: translateY(0);
-      }
-      40% {
-        transform: translateY(-15px);
-      }
-      60% {
-        transform: translateY(-8px);
-      }
+      z-index: 2;
+      width: 100%;
     }
 
     #resetButton {
       padding: 20px 40px;
-      background-color: red;
+      background: red;
       color: #fff;
       border: none;
       font-size: 24px;
       cursor: pointer;
-      position: relative;
-      overflow: hidden;
       border-radius: 50px;
+      width: 100%;
     }
 
-    #resetButton.break {
-      animation: break-apart 0.6s forwards;
+    .drop {
+      position: absolute;
+      background: red;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0.7;
+      z-index: 1;
+      animation: drip 2s forwards;
     }
 
-    @keyframes break-apart {
-      0% { transform: translate(0,0) rotate(0); opacity: 1; }
-      30% { transform: translate(-10px, -10px) rotate(-10deg); opacity: 0.8; }
-      60% { transform: translate(10px, 10px) rotate(10deg); opacity: 0.5; }
-      100% { transform: translate(100px, 100px) rotate(60deg); opacity: 0; }
+    @keyframes drip {
+      0% {
+        width: 10px;
+        height: 10px;
+        opacity: 0.7;
+      }
+      100% {
+        width: 1500px;
+        height: 1500px;
+        opacity: 0.9;
+      }
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 20px;
     }
 
     #status {
       text-align: center;
-      font-size: 18px;
       font-weight: bold;
       margin-top: 10px;
     }
@@ -150,7 +132,7 @@
     <label for="credits">How many credits:</label>
     <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
 
-    <input class="colorBtn" type="submit" value="SUBMIT" id="submitButton">
+    <button id="submitButton" type="submit">SUBMIT</button>
     <br><br>
     <button id="resetButton" type="reset">Reset</button>
   </form>
@@ -177,47 +159,40 @@
 
     document.getElementById('counter').textContent = storedCount;
 
-    // Reset button animation
-    document.getElementById("resetButton").addEventListener("click", function() {
-      let btn = this;
-      btn.classList.add("break");
-      setTimeout(() => {
-        btn.classList.remove("break");
-      }, 700);
-    });
-
-    // Handle form submit without leaving page
-    document.getElementById("reportForm").addEventListener("submit", function(event) {
-      event.preventDefault();
+    // Red liquid drip on submit
+    document.getElementById('reportForm').addEventListener('submit', function(e) {
+      e.preventDefault();
 
       const form = this;
-      const submitBtn = document.getElementById("submitButton");
-      
-      // Add shatter animation
-      submitBtn.classList.add("shatter");
+      const button = document.getElementById('submitButton');
+      const formRect = form.getBoundingClientRect();
+      const btnRect = button.getBoundingClientRect();
 
-      const formData = new FormData(form);
+      // Create drop
+      const drop = document.createElement('div');
+      drop.className = 'drop';
+      drop.style.left = (btnRect.left + btnRect.width / 2 - formRect.left) + 'px';
+      drop.style.top = (btnRect.top + btnRect.height / 2 - formRect.top) + 'px';
 
+      form.appendChild(drop);
+
+      // Send form data
       fetch("https://formsubmit.co/zezo_z4ever@outlook.com", {
-        method: "post",
-        body: formData
-      })
-      .then(response => {
-        if (response.ok) {
-          document.getElementById("status").innerText = "✅ Report submitted successfully!";
-          form.reset();
-        } else {
-          document.getElementById("status").innerText = "❌ Submission failed. Please try again.";
-        }
-      })
-      .catch(() => {
-        document.getElementById("status").innerText = "⚠ Error submitting form.";
-      })
-      .finally(() => {
-        setTimeout(() => {
-          submitBtn.classList.remove("shatter");
-        }, 700);
+        method: "POST",
+        body: new FormData(form)
+      }).then(response => {
+        document.getElementById('status').innerText = response.ok ? "✅ Submitted!" : "❌ Failed!";
+      }).catch(() => {
+        document.getElementById('status').innerText = "⚠ Error sending!";
       });
+    });
+
+    // Reset button animation
+    document.getElementById("resetButton").addEventListener("click", function() {
+      this.classList.add("break");
+      setTimeout(() => {
+        this.classList.remove("break");
+      }, 700);
     });
   </script>
 
