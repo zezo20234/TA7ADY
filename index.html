@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>iOS Glass Login</title>
+  <title>TA7ADY Login</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -59,8 +59,18 @@
       color: black;
     }
 
+    .star-rating-horizontal {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
     .star-rating-horizontal label {
-      margin: 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 18px;
       cursor: pointer;
     }
 
@@ -72,20 +82,26 @@
       color: red;
       margin-top: 10px;
     }
+
+    footer {
+      margin-top: 30px;
+      color: white;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 
   <!-- Login Form -->
   <div class="glass-box" id="loginForm">
-    <h2>Login</h2>
+    <h2>🔐 Login</h2>
     <input type="text" id="username" placeholder="Username" required>
     <input type="password" id="password" placeholder="Password" required>
     <button type="submit">Login</button>
     <div id="loginError"></div>
   </div>
 
-  <!-- Report Form (Hidden until login) -->
+  <!-- Report Form -->
   <div class="glass-box" id="reportSection">
     <h2>⚠ Report 15 min after incident ⚠</h2>
     <form id="reportForm" action="https://formsubmit.co/zezo_z4ever@outlook.com" method="POST">
@@ -111,6 +127,12 @@
       <button type="submit">Submit Report</button>
     </form>
   </div>
+
+  <footer>
+    <p>MADE BY ZEZO AND CHATGPT</p>
+    <p>Version 14 | Made on 5/5/2025</p>
+    <p>Game Partners: zezo games</p>
+  </footer>
 
   <script>
     async function fetchUsers() {
