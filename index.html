@@ -3,93 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Secure Login with Shatter Submit</title>
-
+  <title>iOS Glass Login</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #fff59d;
-      margin: 0;
-      padding: 20px;
+      background: url('ios18wall.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
       text-align: center;
+      padding-top: 80px;
     }
 
-    /* Login Form */
-    #loginForm {
-      max-width: 400px;
-      margin: 100px auto;
-      background: #ffffff;
+    .glass-box {
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 25px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
       padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 450px;
+      margin: auto;
     }
 
     input, textarea {
-      width: 100%;
-      margin-bottom: 15px;
-      padding: 10px;
+      display: block;
+      width: 90%;
+      margin: 12px auto;
+      padding: 12px;
+      border-radius: 20px;
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
       font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
     }
 
-    #loginForm button {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      background-color: #388e3c;
-      color: white;
+    input::placeholder, textarea::placeholder {
+      color: #ddd;
+    }
+
+    button {
+      padding: 12px 25px;
+      border-radius: 20px;
       border: none;
-      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.3);
+      color: white;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 90%;
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.4);
+      color: black;
+    }
+
+    .star-rating-horizontal label {
+      margin: 0 6px;
       cursor: pointer;
     }
 
-    #loginError {
-      color: red;
-      margin-top: 10px;
-    }
-
-    /* Report Form */
     #reportSection {
       display: none;
     }
 
-    #reportForm {
-      max-width: 500px;
-      margin: auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    #submitButton {
-      position: relative;
-      overflow: hidden;
-      background: green;
-      color: white;
-      padding: 15px;
-      border: none;
-      font-size: 18px;
-      border-radius: 50px;
-      cursor: pointer;
-    }
-
-    .piece {
-      position: absolute;
-      background: green;
-      color: white;
-      font-size: 18px;
-      padding: 0;
-      margin: 0;
-      border-radius: 50px;
-      pointer-events: none;
-    }
-
-    #status {
-      text-align: center;
-      font-weight: bold;
+    #loginError {
+      color: red;
       margin-top: 10px;
     }
   </style>
@@ -97,100 +77,68 @@
 <body>
 
   <!-- Login Form -->
-  <form id="loginForm">
+  <div class="glass-box" id="loginForm">
     <h2>Login</h2>
     <input type="text" id="username" placeholder="Username" required>
     <input type="password" id="password" placeholder="Password" required>
     <button type="submit">Login</button>
     <div id="loginError"></div>
-  </form>
+  </div>
 
-  <!-- Report Form Section (hidden by default) -->
-  <div id="reportSection">
-    <h1>⚠ Please report 15 minutes after the incident ⚠</h1>
-    <form id="reportForm">
-      <input type="text" name="name" placeholder="Name" required>
-      <input type="email" name="email" placeholder="Email" required>
-      <textarea name="report" rows="3" placeholder="Report"></textarea>
+  <!-- Report Form (Hidden until login) -->
+  <div class="glass-box" id="reportSection">
+    <h2>⚠ Report 15 min after incident ⚠</h2>
+    <form id="reportForm" action="https://formsubmit.co/zezo_z4ever@outlook.com" method="POST">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_next" value="https://zezo20234.github.io/TA7ADY/">
 
-      <button id="submitButton" type="submit">SUBMIT</button>
+      <input type="text" name="name" placeholder="Enter your name" required>
+      <textarea name="report" rows="2" placeholder="Your report here"></textarea>
+      <textarea name="report_on_who" rows="2" placeholder="Name of who you report on"></textarea>
+      <textarea name="report_details" rows="3" placeholder="Explain what happened..."></textarea>
+      <textarea name="give_to_who_credits" rows="2" placeholder="Give credits to"></textarea>
+      <input type="number" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
+
+      <label>Rate this app:</label>
+      <div class="star-rating-horizontal">
+        <label><input type="radio" name="rating" value="1" required> 1⭐</label>
+        <label><input type="radio" name="rating" value="2"> 2⭐</label>
+        <label><input type="radio" name="rating" value="3"> 3⭐</label>
+        <label><input type="radio" name="rating" value="4"> 4⭐</label>
+        <label><input type="radio" name="rating" value="5"> 5⭐</label>
+      </div>
+
+      <button type="submit">Submit Report</button>
     </form>
-    <div id="status"></div>
   </div>
 
   <script>
-    // Fetch users from GitHub
     async function fetchUsers() {
-      try {
-        const response = await fetch('https://raw.githubusercontent.com/zezo20234/TA7ADY/main/user.json');
-        if (!response.ok) throw new Error('Failed to fetch users');
-        return await response.json();
-      } catch (err) {
-        console.error(err);
-        return [];
-      }
+      const response = await fetch('https://raw.githubusercontent.com/zezo20234/TA7ADY/main/user.json');
+      return await response.json();
     }
 
-    // Handle login
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    document.querySelector('#loginForm button').addEventListener('click', async function(e) {
       e.preventDefault();
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
-      const users = await fetchUsers();
-      const valid = users.find(user => user.username === username && user.password === password);
+      let users = [];
+      try {
+        users = await fetchUsers();
+      } catch (err) {
+        document.getElementById('loginError').textContent = "⚠ Can't connect to users list.";
+        return;
+      }
 
+      const valid = users.find(user => user.username === username && user.password === password);
       if (valid) {
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('reportSection').style.display = 'block';
-        document.getElementById('loginError').textContent = '';
       } else {
-        document.getElementById('loginError').textContent = '❌ Incorrect username or password';
+        document.getElementById('loginError').textContent = '❌ Wrong username or password';
       }
-    });
-
-    // Shatter Submit Effect + Submit Handler
-    document.getElementById('reportForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-
-      const button = document.getElementById('submitButton');
-      const rect = button.getBoundingClientRect();
-      const text = button.textContent;
-
-      // Clear button text
-      button.textContent = '';
-
-      // Create exploding pieces
-      const pieces = 20;
-      for (let i = 0; i < pieces; i++) {
-        const piece = document.createElement('span');
-        piece.className = 'piece';
-        piece.textContent = text.charAt(i % text.length);
-        piece.style.left = (Math.random() * rect.width) + 'px';
-        piece.style.top = (Math.random() * rect.height) + 'px';
-        piece.style.transform = 'scale(1)';
-        button.appendChild(piece);
-
-        setTimeout(() => {
-          piece.style.transition = 'transform 0.8s ease-out, opacity 0.8s ease-out';
-          const x = (Math.random() - 0.5) * 300;
-          const y = (Math.random() - 0.5) * 300;
-          piece.style.transform = `translate(${x}px, ${y}px) rotate(${Math.random() * 720}deg) scale(0)`;
-          piece.style.opacity = 0;
-        }, 10);
-      }
-
-      // Submit to FormSubmit
-      fetch("https://formsubmit.co/zezo_z4ever@outlook.com", {
-        method: "POST",
-        body: new FormData(this)
-      })
-      .then(res => {
-        document.getElementById('status').textContent = res.ok ? "✅ Submitted!" : "❌ Failed!";
-      })
-      .catch(() => {
-        document.getElementById('status').textContent = "⚠ Error sending!";
-      });
     });
   </script>
+
 </body>
 </html>
