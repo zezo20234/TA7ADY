@@ -65,12 +65,17 @@
       border: none;
       border-radius: 50px;
       cursor: pointer;
-      transition: none;
       width: 100%;
+      position: relative;
+      overflow: hidden;
     }
 
-    .colorBtn:hover {
-      filter: none;
+    .colorBtn:active {
+      animation: bounce 0.6s;
+    }
+
+    .colorBtn.shatter {
+      animation: break-apart 0.6s forwards;
     }
 
     @keyframes bounce {
@@ -85,10 +90,6 @@
       }
     }
 
-    .colorBtn:active {
-      animation: bounce 0.6s;
-    }
-
     #resetButton {
       padding: 20px 40px;
       background-color: red;
@@ -98,7 +99,6 @@
       cursor: pointer;
       position: relative;
       overflow: hidden;
-      transition: transform 0.3s ease;
       border-radius: 50px;
     }
 
@@ -150,7 +150,7 @@
     <label for="credits">How many credits:</label>
     <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
 
-    <input class="colorBtn" type="submit" value="SUBMIT">
+    <input class="colorBtn" type="submit" value="SUBMIT" id="submitButton">
     <br><br>
     <button id="resetButton" type="reset">Reset</button>
   </form>
@@ -159,7 +159,7 @@
 
   <footer>
     <p>MADE BY ZEYAD AND CHATGPT</p>
-    <p>Version 10 | Made on 5/5/2025</p>
+    <p>Version 9.5 | Made on 5/5/2025</p>
     <p>Game Partners: zezo games, manager game 200C per goal.</p>
   </footer>
 
@@ -190,7 +190,13 @@
     document.getElementById("reportForm").addEventListener("submit", function(event) {
       event.preventDefault();
 
-      const formData = new FormData(this);
+      const form = this;
+      const submitBtn = document.getElementById("submitButton");
+      
+      // Add shatter animation
+      submitBtn.classList.add("shatter");
+
+      const formData = new FormData(form);
 
       fetch("https://formsubmit.co/zezo_z4ever@outlook.com", {
         method: "POST",
@@ -199,13 +205,18 @@
       .then(response => {
         if (response.ok) {
           document.getElementById("status").innerText = "✅ Report submitted successfully!";
-          this.reset();
+          form.reset();
         } else {
           document.getElementById("status").innerText = "❌ Submission failed. Please try again.";
         }
       })
       .catch(() => {
         document.getElementById("status").innerText = "⚠ Error submitting form.";
+      })
+      .finally(() => {
+        setTimeout(() => {
+          submitBtn.classList.remove("shatter");
+        }, 700);
       });
     });
   </script>
