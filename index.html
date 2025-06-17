@@ -9,7 +9,6 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 20px;
-      /* Use your local photo as background */
       background: url('apple-touch-icon.png') no-repeat center center fixed;
       background-size: cover;
       min-height: 100vh;
@@ -57,32 +56,12 @@
       backdrop-filter: blur(10px);
     }
 
-    input[type="text"]::placeholder,
-    input[type="email"]::placeholder,
-    input[type="number"]::placeholder,
+    input::placeholder,
     textarea::placeholder {
       color: #eee;
     }
 
-    .glassBtn {
-      padding: 15px 30px;
-      font-size: 18px;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: #fff;
-      border-radius: 50px;
-      cursor: pointer;
-      width: 100%;
-      backdrop-filter: blur(10px);
-      transition: background 0.3s, color 0.3s;
-    }
-
-    .glassBtn:hover {
-      background: rgba(255, 255, 255, 0.3);
-      color: #000;
-    }
-
-    #resetButton {
+    .glassBtn, #resetButton {
       padding: 15px 30px;
       font-size: 18px;
       background: rgba(255, 255, 255, 0.2);
@@ -96,9 +75,21 @@
       margin-top: 10px;
     }
 
-    #resetButton:hover {
+    .glassBtn:hover, #resetButton:hover {
       background: rgba(255, 255, 255, 0.3);
       color: #000;
+    }
+
+    #form-success {
+      display: none;
+      max-width: 500px;
+      margin: 20px auto;
+      padding: 15px;
+      color: #155724;
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      border-radius: 10px;
+      text-align: center;
     }
   </style>
 </head>
@@ -109,7 +100,11 @@
     <span id="counter"></span>
   </div>
 
-  <form id="reportForm">
+  <form id="reportForm" action="https://formsubmit.co/YOUR_EMAIL@example.com" method="POST">
+    <!-- Hidden FormSubmit fields -->
+    <input type="hidden" name="_captcha" value="false">
+    <input type="hidden" name="_next" value="https://yourwebsite.com/#form-success">
+
     <label for="name">Name:</label>
     <input type="text" id="name" name="name" placeholder="Enter your name" required>
 
@@ -131,41 +126,49 @@
     <label for="credits">How many credits:</label>
     <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
 
+    <label for="rating">Rate this app:</label>
+    <div class="star-rating-horizontal" id="rating">
+      <label><input type="radio" name="rating" value="1" required /><span>1⭐</span></label>
+      <label><input type="radio" name="rating" value="2" /><span>2⭐</span></label>
+      <label><input type="radio" name="rating" value="3" /><span>3⭐</span></label>
+      <label><input type="radio" name="rating" value="4" /><span>4⭐</span></label>
+      <label><input type="radio" name="rating" value="5" /><span>5⭐</span></label>
+    </div>
+
     <input id="submitBtn" class="glassBtn" type="submit" value="SUBMIT">
     <button id="resetButton" type="reset">Reset</button>
-
-<label for="rating">Rate this app:</label>
-<div class="star-rating-horizontal" id="rating">
-  <label>
-    <input type="radio" name="rating" value="1" required />
-    <span>1⭐</span>
-  </label>
-  <label>
-    <input type="radio" name="rating" value="2" />
-    <span>2⭐</span>
-  </label>
-  <label>
-    <input type="radio" name="rating" value="3" />
-    <span>3⭐</span>
-  </label>
-  <label>
-    <input type="radio" name="rating" value="4" />
-    <span>4⭐</span>
-  </label>
-  <label>
-    <input type="radio" name="rating" value="5" />
-    <span>5⭐</span>
-  </label>
-</div>
-
-
   </form>
+
+  <!-- Success Message -->
+  <div id="form-success">✅ Thank you! Your message has been sent.</div>
 
   <footer style="color:white; text-align:center; margin-top:20px;">
     <p>MADE BY ZEYAD AND CHATGPT</p>
     <p>Version 12 | Made on 5/5/2025</p>
     <p>Game Partners: zezo games, manager game 200C per goal.</p>
   </footer>
+
+  <script>
+    document.getElementById('reportForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const form = e.target;
+
+      fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' }
+      }).then(response => {
+        if (response.ok) {
+          form.reset();
+          document.getElementById('form-success').style.display = 'block';
+        } else {
+          alert("Something went wrong. Please try again.");
+        }
+      }).catch(error => {
+        alert("Error sending form. Check your internet connection.");
+      });
+    });
+  </script>
 
 </body>
 </html>
