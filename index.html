@@ -57,24 +57,22 @@
       outline: none;
     }
 
-    /* Updated submit button styles */
     .colorBtn {
       padding: 15px 30px;
       font-size: 18px;
-      background-color: green; /* changed to green */
+      background-color: green;
       color: white;
       border: none;
       border-radius: 50px;
       cursor: pointer;
-      transition: none; /* disable hover transition */
+      transition: none;
       width: 100%;
     }
 
     .colorBtn:hover {
-      filter: none; /* no hover effect */
+      filter: none;
     }
 
-    /* Bounce animation */
     @keyframes bounce {
       0%, 20%, 50%, 80%, 100% {
         transform: translateY(0);
@@ -87,12 +85,10 @@
       }
     }
 
-    /* Animate bounce on click */
     .colorBtn:active {
       animation: bounce 0.6s;
     }
 
-    /* Reset button styles and animation */
     #resetButton {
       padding: 20px 40px;
       background-color: red;
@@ -116,6 +112,13 @@
       60% { transform: translate(10px, 10px) rotate(10deg); opacity: 0.5; }
       100% { transform: translate(100px, 100px) rotate(60deg); opacity: 0; }
     }
+
+    #status {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -125,7 +128,7 @@
     <span id="counter"></span>
   </div>
 
-  <form action="https://formsubmit.co/zezo_z4ever@outlook.com" method="POST">
+  <form id="reportForm">
     <label for="name">Name:</label>
     <input type="text" id="name" name="name" placeholder="Enter your name" required>
 
@@ -148,14 +151,15 @@
     <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
 
     <input class="colorBtn" type="submit" value="SUBMIT">
-    <br>
-    <br>
+    <br><br>
     <button id="resetButton" type="reset">Reset</button>
   </form>
 
+  <div id="status"></div>
+
   <footer>
     <p>MADE BY ZEYAD AND CHATGPT</p>
-    <p>Version 9.5 | Made on 5/5/2025</p>
+    <p>Version 10 | Made on 5/5/2025</p>
     <p>Game Partners: zezo games, manager game 200C per goal.</p>
   </footer>
 
@@ -172,15 +176,37 @@
     }
 
     document.getElementById('counter').textContent = storedCount;
-  </script>
 
-  <script>
+    // Reset button animation
     document.getElementById("resetButton").addEventListener("click", function() {
       let btn = this;
       btn.classList.add("break");
       setTimeout(() => {
         btn.classList.remove("break");
       }, 700);
+    });
+
+    // Handle form submit without leaving page
+    document.getElementById("reportForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const formData = new FormData(this);
+
+      fetch("https://formsubmit.co/zezo_z4ever@outlook.com", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => {
+        if (response.ok) {
+          document.getElementById("status").innerText = "✅ Report submitted successfully!";
+          this.reset();
+        } else {
+          document.getElementById("status").innerText = "❌ Submission failed. Please try again.";
+        }
+      })
+      .catch(() => {
+        document.getElementById("status").innerText = "⚠ Error submitting form.";
+      });
     });
   </script>
 
