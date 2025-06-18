@@ -1,11 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.4/firebase-database.js"></script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>`
-  <title>THE CHALLENGE</title>
-<link rel="apple-touch-icon" sizes="180x180" href="chat.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CHALLENGE</title>
 
+  <link rel="apple-touch-icon" sizes="180x180" href="brrrrrr.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="brrrrrr.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="THE CHALLENGE" />
+  <meta name="mobile-web-app-capable" content="yes" />
 
   <style>
     body {
@@ -14,29 +20,19 @@
       padding: 20px;
       background: url('ios18wall.jpg') no-repeat center center fixed;
       background-size: cover;
+      color: white;
     }
-
-    .counter-box, .welcome-box {
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 20px;
-      color: #fff;
-    }
-
-    .login-box {
+    .login-box, form, #selfEditArea, #selfEditor {
       max-width: 400px;
-      margin: auto;
+      margin: 20px auto;
       padding: 25px;
       border-radius: 30px;
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(20px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      color: #fff;
     }
-
-    .login-box input, .login-box button {
+    input, button, select, textarea {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
@@ -46,253 +42,236 @@
       color: #fff;
       font-size: 16px;
       backdrop-filter: blur(10px);
+      box-sizing: border-box;
     }
-
-    .login-box button:hover {
+    button:hover {
       background: rgba(255, 255, 255, 0.3);
       color: #000;
+      cursor: pointer;
     }
-
-    form {
-      max-width: 500px;
-      margin: auto;
-      padding: 25px;
-      border-radius: 30px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      color: #fff;
-      display: none;
-    }
-
     label {
       font-weight: bold;
       display: block;
-      margin-bottom: 5px;
-    }
-
-    input[type="text"], input[type="email"], input[type="number"], textarea {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      font-size: 16px;
-      border-radius: 50px;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: #fff;
-      backdrop-filter: blur(10px);
-    }
-
-    input::placeholder, textarea::placeholder {
-      color: #eee;
-    }
-
-    .glassBtn, #resetButton {
-      padding: 15px 30px;
-      font-size: 18px;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: #fff;
-      border-radius: 50px;
-      cursor: pointer;
-      width: 100%;
-      backdrop-filter: blur(10px);
-      transition: background 0.3s, color 0.3s;
       margin-top: 10px;
     }
-
-    .glassBtn:hover, #resetButton:hover {
-      background: rgba(255, 255, 255, 0.3);
-      color: #000;
-    }
-
-    #form-success {
-      display: none;
-      max-width: 500px;
-      margin: 20px auto;
-      padding: 15px;
-      color: #155724;
-      background-color: #d4edda;
-      border: 1px solid #c3e6cb;
-      border-radius: 10px;
-      text-align: center;
-    }
-
-    footer {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      border-radius: 30px;
-      font-weight: 700;
-      width: fit-content;
-      margin: auto;
-      color: white;
-      text-align: center;
-      margin-top: 20px;
-    }
-
     #infoBox {
-      position: absolute;
+      position: fixed;
       top: 10px;
       left: 10px;
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(15px);
       border-radius: 20px;
       padding: 10px 20px;
-      color: white;
       font-weight: bold;
-      font-size: 16px;
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       display: none;
+      color: white;
     }
-
-    .fade-in {
-      animation: fadeIn 0.8s ease forwards;
-    }
-
-    .fade-out {
-      animation: fadeOut 0.5s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeOut {
-      from { opacity: 1; transform: scale(1); }
-      to { opacity: 0; transform: scale(0.95); }
-    }
-
-    @keyframes slideDown {
-      from { transform: translateY(-100%); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    .slide-down {
-      animation: slideDown 0.8s ease-out forwards;
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-weight: 700;
+      color: white;
     }
   </style>
 </head>
 <body>
 
   <div id="infoBox">
-    <p>Credits: <span id="infoCredits">0</span></p>
-    <p>Days: <span id="infoDays">0</span></p>
+    Credits: <span id="infoCredits">0</span> | Days: <span id="infoDays">0</span>
   </div>
 
   <div class="login-box" id="loginBox">
     <h2 style="text-align:center;">Login</h2>
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
+    <input type="text" id="username" placeholder="Username" autocomplete="off" />
+    <input type="password" id="password" placeholder="Password" autocomplete="off" />
     <button onclick="checkLogin()">Login</button>
   </div>
 
-  <div class="welcome-box" id="welcomeBox" style="display: none;">
-    <h1>Welcome back <span id="userWelcome"></span></h1>
+  <div id="welcomeBox" style="display:none; text-align:center; margin-top:20px;">
+    <h1>Welcome back, <span id="userWelcome"></span>!</h1>
   </div>
 
-  <div class="counter-box" id="counterBox" style="display:none;">
-    <span id="counter"></span>
-  </div>
-
-  <form id="reportForm" action="https://formsubmit.co/zezo_z4ever@outlook.com" method="post">
-    <input type="hidden" name="_captcha" value="false">
-    <input type="hidden" name="_next" value="https://zezo20234.github.io/TA7ADY/">
-
+  <form id="reportForm" style="display:none;" action="https://formsubmit.co/zezo_z4ever@outlook.com" method="post">
+    <input type="hidden" name="_captcha" value="false" />
+    <input type="hidden" name="_next" value="https://zezo20234.github.io/TA7ADY/" />
     <label for="name">Name:</label>
-    <input type="text" id="name" name="name" placeholder="Enter your name" required>
-
+    <input type="text" id="name" name="name" placeholder="Enter your name" required />
     <label for="report">Report:</label>
     <textarea id="report" name="report" rows="2" placeholder="Your report here"></textarea>
-
     <label for="reportWho">Report on who:</label>
     <textarea id="reportWho" name="report_on_who" rows="2" placeholder="Name of who you report on"></textarea>
-
     <label for="reportDetails">Report details:</label>
     <textarea id="reportDetails" name="report_details" rows="3" placeholder="Explain what happened..."></textarea>
-
     <label for="giveCredits">Give credits to:</label>
     <textarea id="giveCredits" name="give_to_who_credits" rows="3" placeholder="Who should get credit?"></textarea>
-
     <label for="credits">How many credits:</label>
-    <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount">
-
+    <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount" />
     <label for="rating">Rate this app:</label>
-    <div class="star-rating-horizontal" id="rating">
-      <label><input type="radio" name="rating" value="1" required /><span>1⭐</span></label>
-      <label><input type="radio" name="rating" value="2" /><span>2⭐</span></label>
-      <label><input type="radio" name="rating" value="3" /><span>3⭐</span></label>
-      <label><input type="radio" name="rating" value="4" /><span>4⭐</span></label>
-      <label><input type="radio" name="rating" value="5" /><span>5⭐</span></label>
+    <div id="rating" style="display:flex; gap:10px; justify-content:center; margin-top: 5px;">
+      <label><input type="radio" name="rating" value="1" required />1⭐</label>
+      <label><input type="radio" name="rating" value="2" />2⭐</label>
+      <label><input type="radio" name="rating" value="3" />3⭐</label>
+      <label><input type="radio" name="rating" value="4" />4⭐</label>
+      <label><input type="radio" name="rating" value="5" />5⭐</label>
     </div>
-
-    <input class="glassBtn" type="submit" value="SUBMIT">
-    <button id="resetButton" type="reset">Reset</button>
+    <input type="submit" class="glassBtn" value="SUBMIT" />
+    <button type="reset" id="resetButton">Reset</button>
   </form>
 
-  <div id="form-success">✅ Thank you! Your message has been sent.</div>
+  <div id="selfEditArea" class="login-box" style="display:none;">
+    <h3>🔒 Enter Secret Code</h3>
+    <input type="password" id="secretCodeInput" placeholder="Enter secret code" autocomplete="off" />
+    <button onclick="checkSecretCode()">Unlock Editor</button>
+  </div>
+
+  <div id="selfEditor" class="login-box" style="display:none;">
+    <h3>Edit Your Own Account</h3>
+    <label for="selfCredits">Credits:</label>
+    <input type="number" id="selfCredits" placeholder="Update your credits" min="0" />
+    <label for="selfDays">Days:</label>
+    <input type="number" id="selfDays" placeholder="Update your days" min="0" />
+    <button onclick="saveSelfChanges()">Save My Changes</button>
+  </div>
 
   <footer>
     <p>MADE BY ZEYAD AND CHATGPT</p>
-    <p>Version 19 | Made on 5/5/2025</p>
+    <p>Version 21 | Made on 5/5/2025</p>
     <p>Game Partners: zezo games</p>
   </footer>
 
   <script>
-    const users = {
-      asser: { password: "asser2025", credits: 1000, days: 30 },
-      layan: { password: "layan999", credits: 1200, days: 25 }
+    // Default users with passwords (you can add more)
+    const defaultUsers = {
+      asser: { password: "asser2025" },
+      layan: { password: "layan999" },
+      zezo: { password: "zezo2023" }
     };
 
+    // Firebase config - REPLACE with your Firebase project credentials:
+   const firebaseConfig = {
+  apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
+  authDomain: "the-challenge-fa9b2.firebaseapp.com",
+  databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
+  projectId: "the-challenge-fa9b2",
+  storageBucket: "the-challenge-fa9b2.firebasestorage.app",
+  messagingSenderId: "4102830619",
+  appId: "1:4102830619:web:581e033f36ec02708916be",
+  measurementId: "G-7M7JLK1V86"
+};
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let currentUser = null;
+    let currentUserData = null;
+
+    // Login function
     function checkLogin() {
       const user = document.getElementById("username").value.trim();
       const pass = document.getElementById("password").value.trim();
 
-      if (users[user] && users[user].password === pass) {
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("reportForm").style.display = "block";
-        document.getElementById("counterBox").style.display = "block";
-        document.getElementById("welcomeBox").style.display = "block";
-        document.getElementById("infoBox").style.display = "block";
+      if (!defaultUsers[user]) {
+        alert("User not found.");
+        return;
+      }
+      if (defaultUsers[user].password !== pass) {
+        alert("Invalid password.");
+        return;
+      }
 
-        document.getElementById("userWelcome").innerText = user;
-        document.getElementById("infoCredits").innerText = users[user].credits;
-        document.getElementById("infoDays").innerText = users[user].days;
+      currentUser = user;
 
-        document.getElementById("reportForm").classList.add("fade-in");
-        document.getElementById("counterBox").classList.add("fade-in");
+      // Load user data from Firebase or initialize if missing
+      firebase.database().ref('users/' + currentUser).get().then(snapshot => {
+        if (snapshot.exists()) {
+          currentUserData = snapshot.val();
+        } else {
+          // If no data exists for this user, initialize default credits/days
+          currentUserData = { credits: 1000, days: 30 };
+          firebase.database().ref('users/' + currentUser).set(currentUserData);
+        }
 
-        const welcomeBox = document.getElementById("welcomeBox");
-        welcomeBox.classList.remove("fade-in");
-        welcomeBox.classList.add("slide-down");
+        // Update UI after data load
+        showLoggedInUI();
+        updateInfoBox();
+        listenForUserChanges();
+
+      }).catch(error => {
+        alert("Failed to load user data: " + error.message);
+      });
+    }
+
+    // Show UI after login
+    function showLoggedInUI() {
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("reportForm").style.display = "block";
+      document.getElementById("welcomeBox").style.display = "block";
+      document.getElementById("infoBox").style.display = "block";
+      document.getElementById("selfEditArea").style.display = "block";
+      document.getElementById("userWelcome").innerText = currentUser;
+    }
+
+    // Update info box with current data
+    function updateInfoBox() {
+      document.getElementById("infoCredits").innerText = currentUserData.credits ?? 0;
+      document.getElementById("infoDays").innerText = currentUserData.days ?? 0;
+    }
+
+    // Listen for realtime changes on this user's data and update UI instantly
+    function listenForUserChanges() {
+      firebase.database().ref('users/' + currentUser).on('value', snapshot => {
+        if (snapshot.exists()) {
+          currentUserData = snapshot.val();
+          updateInfoBox();
+
+          // Also update the editor fields if open
+          if (document.getElementById("selfEditor").style.display === "block") {
+            document.getElementById("selfCredits").value = currentUserData.credits;
+            document.getElementById("selfDays").value = currentUserData.days;
+          }
+        }
+      });
+    }
+
+    // Secret code check to unlock editor
+    function checkSecretCode() {
+      const code = document.getElementById("secretCodeInput").value.trim();
+      if (code === "11223344") {
+        document.getElementById("selfEditor").style.display = "block";
+        document.getElementById("selfCredits").value = currentUserData.credits;
+        document.getElementById("selfDays").value = currentUserData.days;
       } else {
-        alert("Invalid username or password.");
+        alert("❌ Invalid code.");
       }
     }
 
-    document.getElementById('reportForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      const form = e.target;
+    // Save changes to Firebase when user edits credits or days
+    function saveSelfChanges() {
+      const newCredits = parseInt(document.getElementById("selfCredits").value);
+      const newDays = parseInt(document.getElementById("selfDays").value);
 
-      fetch(form.action, {
-        method: 'POST',
-        body: new FormData(form),
-        headers: { 'Accept': 'application/json' }
-      }).then(response => {
-        if (response.ok) {
-          form.reset();
-          document.getElementById('form-success').style.display = 'block';
-        } else {
-          alert("Something went wrong. Please try again.");
-        }
+      if (isNaN(newCredits) || newCredits < 0) {
+        alert("Please enter a valid non-negative number for credits.");
+        return;
+      }
+      if (isNaN(newDays) || newDays < 0) {
+        alert("Please enter a valid non-negative number for days.");
+        return;
+      }
+
+      // Update Firebase
+      firebase.database().ref('users/' + currentUser).update({
+        credits: newCredits,
+        days: newDays
+      }).then(() => {
+        alert("✅ Your credits and days have been updated and saved!");
       }).catch(error => {
-        alert("Error sending form. Check your internet connection.");
+        alert("Failed to save data: " + error.message);
       });
-    });
+    }
   </script>
 </body>
 </html>
