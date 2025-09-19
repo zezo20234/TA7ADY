@@ -1,1481 +1,470 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Login, Report, Shop & Credits Sender with Dynamic Island + Notifications</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2b4c7e">
-<link rel="apple-touch-icon" href="LABUBU3.jpg">
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HackerBoard — Updates / Trello-like</title>
 <style>
-  .pointcoin {
-  width: 50px;   /* adjust size */
-  height: 50px;
-  vertical-align: middle; /* aligns with text if inline */
-}
+  :root{
+    --bg:#07100a;
+    --panel:#021006;
+    --accent:#00ff6a;
+    --muted:#0b3a26;
+    --card:#082215;
+    --danger:#ff4d4d;
+    --glass: rgba(255,255,255,0.02);
+    --glass-2: rgba(0,0,0,0.3);
+  }
+  html,body{height:100%;margin:0;font-family: "Courier New", Courier, monospace;background:linear-gradient(90deg,#001200 0%, #002200 50%, #001200 100%); color:var(--accent); -webkit-font-smoothing:antialiased;}
+  /* matrix background lines */
+  body::before{
+    content:"";
+    position:fixed; inset:0; pointer-events:none;
+    background-image: linear-gradient(transparent 92%, rgba(0,255,110,0.02) 92%),
+                      linear-gradient(90deg, transparent 93%, rgba(0,255,110,0.02) 93%);
+    background-size: 100% 32px, 32px 100%;
+    mix-blend-mode: overlay;
+  }
+  .app {
+    padding:14px;
+    box-sizing:border-box;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .topbar{
+    display:flex; gap:12px; align-items:center;
+  }
+  .logo{
+    font-weight:800; font-size:18px; color:var(--accent); letter-spacing:1px;
+    background: linear-gradient(90deg, rgba(0,255,110,0.12), rgba(0,255,110,0.02));
+    padding:8px 12px; border-radius:6px; box-shadow:0 4px 12px rgba(0,255,110,0.03);
+  }
+  .controls { display:flex; gap:8px; align-items:center; margin-left:auto; }
+  input.code {
+    background:transparent; border:1px solid rgba(0,255,110,0.12); color:var(--accent);
+    padding:6px 8px; border-radius:6px; width:80px; text-align:center;
+  }
+  button.btn {
+    background:linear-gradient(180deg, rgba(0,255,110,0.06), rgba(0,255,110,0.02));
+    color:var(--accent); border:1px solid rgba(0,255,110,0.15); padding:8px 12px; border-radius:6px;
+    cursor:pointer; font-weight:700;
+  }
+  button.btn:disabled{opacity:0.45; cursor:not-allowed;}
+  .status-pill { padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; }
+  .board {
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    overflow:auto;
+    padding:8px;
+  }
+  .part {
+    min-width:260px;
+    background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.45));
+    border-radius:10px; padding:10px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); border:1px solid rgba(0,255,110,0.04);
+  }
+  .part-header { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
+  .part-title { font-weight:800; font-size:14px; }
+  .part-actions { margin-left:auto; display:flex; gap:6px; }
+  .part-admin { font-size:11px; color:#00ff6a; opacity:0.85; background:rgba(0,0,0,0.2); padding:4px 6px; border-radius:6px; }
+  .cards { display:flex; flex-direction:column; gap:8px; }
+  .card {
+    background: linear-gradient(180deg, rgba(0,255,110,0.02), rgba(0,255,110,0.006));
+    border:1px solid rgba(0,255,110,0.06); padding:10px; border-radius:8px;
+    color:#bfffd6;
+  }
+  .card .title { font-weight:800; margin-bottom:6px; }
+  .card .desc { font-size:12px; color:#a6f8bf; margin-bottom:8px; opacity:0.95; }
+  .card .meta { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .small { font-size:12px; opacity:0.9; }
+  .controls-2 { display:flex; gap:6px; margin-left:auto; }
+  .status-Not\ Started{ background: rgba(255,255,255,0.03); color:#ffd; }
+  .status-Being\ Made{ background: rgba(0,255,110,0.06); color: #b9ffd6; }
+  .status-Confirmed{ background: rgba(0,200,100,0.08); color:#aaf3c7; }
+  .status-Done{ background: rgba(0,160,60,0.08); color:#88f0b1; text-decoration:line-through; }
+  .muted { color:#3a9a63; font-size:12px; }
+  .ghost {
+    border:1px dashed rgba(0,255,110,0.06); padding:8px; border-radius:6px; color:#97f7b8; background:linear-gradient(180deg, rgba(0,255,110,0.01), transparent);
+  }
 
-  /* local time + welcome styling */
-.island-time .label,
-.island-welcome .label { font-size:0.75rem; opacity:0.9; color: var(--island-text); margin-right:6px; }
-.island-time .value,
-.island-welcome .value { font-weight:700; font-size:1rem; color: var(--island-text); min-width:70px; text-align:right; }
+  /* hack overlay */
+  .hack-overlay{
+    position:fixed; inset:0; display:none; z-index:99999; backdrop-filter: blur(4px);
+    background: linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.9));
+    color:var(--accent); font-family: "Courier New", monospace;
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px;
+  }
+  .hack-box{
+    width:92%; max-width:900px; height:70%; background:#001a0d; border-radius:8px; padding:14px; overflow:auto; border:1px solid rgba(0,255,110,0.06);
+  }
+  .hack-feed { height:calc(100% - 36px); overflow:auto; font-size:12px; line-height:1.2; white-space:pre; color:#8cff9e; }
+  .hack-footer { display:flex; gap:12px; align-items:center; justify-content:space-between; margin-top:6px; color:#9efbb0; }
+  .green-big{ color:var(--accent); font-weight:800; font-size:20px; }
 
-#islandWelcome { transition: opacity 220ms ease, transform 220ms cubic-bezier(.2,.9,.3,1); }
-#islandWelcome.hidden { opacity: 0; transform: translateY(-6px); pointer-events: none; }
-
-:root{
-  --island-bg: #000;    /* Black by default */
-  --island-text: #fff;
-  --island-radius: 28px;
-  --island-padding: 10px 14px;
-}
-body {
-  font-family: Arial, sans-serif;
-  max-width: 700px;
-  margin: 30px auto;
-  padding: 10px;
-  background: linear-gradient(135deg, #f0f4f9, #d9e4f5);
-  color: #333;
-  font-size: 1rem;
-  line-height: 1.4;
-}
-@media (max-width: 700px) {
-  body { max-width: 100%; margin: 10px; padding: 10px 15px; }
-}
-
-h2, h3 { color: #2b4c7e; margin-bottom: 10px; }
-
-button, input, select { width: 100%; max-width: 100%; padding: 12px; margin-top: 6px; font-size: 1.1rem; box-sizing: border-box; border-radius: 6px; border: 1px solid #ccc; touch-action: manipulation; }
-button { background: #2b4c7e; color: white; cursor: pointer; user-select: none; }
-button:hover { background: #1f3557; }
-
-/* --- ICON / COIN SIZING (SLIGHTLY BIGGER) --- */
-img[src$="EGP.png"], .coin-icon, .island-icon {
-  width: 25px !important;
-  height: 25px !important;
-  vertical-align: middle;
-}
-
-/* coin-icon fallback (used inline) */
-.coin-icon { display: inline-block; }
-
-/* --- Dynamic Island (top middle) --- */
-#dynamic-island {
-  position: fixed;
-  left: 50%;
-  /* place under iPhone 11 notch:
-     - use env(safe-area-inset-top) when supported,
-     - fallback to 44px (typical iPhone 11 notch height),
-     - add +6px gap so it's comfortably below the notch. */
-  top: calc(env(safe-area-inset-top, 44px) + 6px);
-  /* older WebKit constant() fallback */
-  top: calc(constant(safe-area-inset-top, 44px) + 6px);
-  transform: translateX(-50%);
-  z-index: 99999;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--island-bg);
-  color: var(--island-text);
-  padding: var(--island-padding);
-  border-radius: var(--island-radius);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-  min-width: 180px;
-  max-width: 92vw;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  cursor: pointer;
-  user-select: none;
-transition:
-    width 600ms cubic-bezier(.22,1,.36,1),
-    border-radius 450ms cubic-bezier(.25,.9,.25,1),
-    background-color 400ms ease;
-  will-change: width, border-radius, background-color;
-}
-
-/* small red blinking dot on the right when unread notifications */
-#notifyDot { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; border-radius:50%; background: transparent; box-shadow: 0 0 6px rgba(0,0,0,0.3); pointer-events: none; }
-#notifyDot.active { background: red; box-shadow: 0 0 10px rgba(255,0,0,0.9); animation: notify-blink 1.6s infinite; }
-@keyframes notify-blink { 0% { opacity: 1; } 50% { opacity: 0.35; } 100% { opacity: 1; } }
-
-/* island content */
-.island-display { display:flex; align-items:center; gap:8px; min-width:160px; }
-.island-metric { display:flex; align-items:center; gap:8px; white-space:nowrap; }
-.island-metric .label { font-size:0.75rem; opacity:0.9; color: var(--island-text); }
-.island-metric .value { font-weight:700; font-size:1rem; color: var(--island-text); }
-.island-icon { display:inline-block; vertical-align:middle; }
-
-/* small menu button at right (visual only — whole island is clickable) */
-#islandMenuBtn { background: rgba(255,255,255,0.06); color: inherit; border: none; border-radius: 10px; padding: 6px 8px; cursor:pointer; }
-#islandMenuBtn:active { transform: scale(0.98); }
-
-/* --- Seamless expanding menu that looks like same island --- */
-#islandMenu {
-  position: fixed;
-  z-index: 99998;
-  background: var(--island-bg);
-  color: var(--island-text);
-  border-radius: 18px;
-  box-shadow: 0 14px 40px rgba(0,0,0,0.3);
-  transform-origin: top center;
-  overflow: hidden;
-  transition: transform 220ms ease, opacity 200ms ease, height 250ms ease, top 200ms ease, left 200ms ease;
-  opacity: 0;
-  transform: scaleY(0.95);
-  pointer-events: none;
-}
-
-/* when open, we apply this class via JS */
-#islandMenu.open { opacity: 1; transform: scaleY(1); pointer-events: auto; }
-
-#islandMenu .menu-inner {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.menu-actions { display:flex; gap:8px; }
-.menu-actions button {
-  flex:1;
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.08);
-  color: var(--island-text);
-  padding: 10px;
-  border-radius: 10px;
-  font-weight: 700;
-}
-.menu-actions button.active { outline: 2px solid rgba(255,255,255,0.15); }
-
-.menu-panel { display:none; background: transparent; color: var(--island-text); }
-.menu-panel.show { display:block; }
-
-.menu-panel .panel-inner {
-  margin-top: 8px;
-  background: rgba(255,255,255,0.02);
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(0,0,0,0.2);
-}
-.menu-panel label { color: var(--island-text); font-weight:600; display:block; margin-bottom:6px; }
-.menu-panel input, .menu-panel select { background: rgba(255,255,255,0.03); color: var(--island-text); border: 1px solid rgba(255,255,255,0.06); }
-.menu-panel button { background: rgba(255,255,255,0.06); color: var(--island-text); border:1px solid rgba(255,255,255,0.06); }
-
-.notification-item { padding: 8px; border-radius:8px; margin-bottom:8px; background: rgba(255,255,255,0.03); border:1px solid rgba(0,0,0,0.06); cursor:pointer; }
-.notification-item.unread { border-left: 4px solid #ff4b4b; }
-.notification-meta { font-size:0.85rem; opacity:0.85; margin-top:6px; }
-.notification-actions { display:flex; gap:8px; margin-top:8px; }
-.notification-actions button { flex:0 0 auto; padding:8px 10px; }
-
-#islandMenu .menu-inner { max-height: 70vh; overflow:auto; }
-
-#login-form, #report-form { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
-label { font-weight: bold; margin-top: 15px; display: block; }
-.rules-list { margin-top: 10px; max-height: 250px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 6px; background: #fafafa; }
-.rule-item { padding: 8px; border-radius: 5px; cursor: pointer; transition: background 0.3s ease; display: flex; justify-content: space-between; align-items: center; }
-.rule-item:hover { background: #e6f0ff; }
-.rule-item.selected { background: #2b4c7e; color: white; }
-.rule-details { font-size: 0.9rem; color: inherit; margin-top: 4px; flex-basis: 100%; }
-.rule-qty { width: 50px; margin-left: 10px; font-size: 1rem; }
-
-#eventsSection { margin-top: 20px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
-.event-item { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
-
-@media (max-width: 420px) {
-  .menu-actions { flex-wrap: wrap; }
-  .menu-actions button { font-size: 0.9rem; padding: 8px; }
-  #dynamic-island { padding: 8px 10px; }
-}
+  /* responsive */
+  @media (max-width:700px){
+    .board { padding-bottom:60px; }
+    .part { min-width:220px; }
+    .topbar { flex-wrap:wrap; gap:8px; }
+  }
 </style>
 </head>
-
 <body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo">HackerBoard • Updates</div>
 
-<div id="welcomeOverlay" style="display:none; align-items:center; justify-content:center; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100000;">
-  <div id="welcomeText" style="color:white; font-weight:700; font-size:1.2rem;"></div>
-  <small style="color:white; display:block; margin-top:8px;">Click to continue</small>
-</div>
-<audio id="welcomeAudio" src="header-39344.mp3"></audio>
+    <div style="padding:8px 12px; border-radius:8px; border:1px solid rgba(0,255,110,0.03); background:rgba(0,0,0,0.25)">
+      <span class="muted">Status:</span>
+      <span id="adminStatus" class="small muted">Locked</span>
+    </div>
 
-<div id="dynamic-island" role="region" aria-label="User status island" title="Tap to open">
-  <div class="island-display" id="islandDisplay">
-  
-    <div id="islandTime" class="island-metric island-time" aria-hidden="false">
-  <span class="label">Local time</span>
-  <span class="value" id="islandLocalTime">--:--:--</span>
-</div>
-    <div class="island-metric" data-type="hours">
-      <span class="label">Hours</span>
-      <span class="value" id="hours-count">0</span>
-    </div>
-    <div class="island-metric" data-type="credits">
-      <span class="label"><img src="EGP.png" alt="coin" class="island-icon coin-icon"></span>
-      <span class="value" id="credits-count">0</span>
-    </div>
-    <div class="island-metric" data-type="points">
-      <span class="label"><img src="POINTS.png" alt="POINTS" class="pointcoin"></span>
-      <span class="value" id="points-count">0</span>
-    </div>
-    <div class="island-metric" data-type="sig">
-      <span class="label">Signature</span>
-      <span class="value" id="sig-hours-left">0</span>
+    <div class="controls">
+      <input id="codeInput" class="code" placeholder="code" value="" />
+      <button id="unlockBtn" class="btn" title="Enter code 555 to unlock">Unlock</button>
+      <button id="hackBtn" class="btn" title="Simulate a hack (10 minutes)">Hack</button>
+      <button id="addPartBtn" class="btn" title="Add a new part (requires unlock)" disabled>Add Part</button>
     </div>
   </div>
-  <button id="islandMenuBtn" aria-hidden="true">≡</button>
-  <span id="notifyDot" aria-hidden="true"></span>
+
+  <div id="board" class="board" aria-live="polite"></div>
+
+  <div style="font-size:12px; color:#94f7b5; opacity:0.9; margin-top:6px;">
+    Tips: create parts (columns), then add cards inside. You can mark parts/cards as admin-only (hidden until unlock with code 555).
+  </div>
 </div>
 
-<div id="islandMenu" aria-hidden="true" role="dialog" aria-label="Island menu">
-  <div class="menu-inner">
-    <div class="menu-actions" role="tablist" aria-label="Island actions">
-      <button id="menuLogoutBtn">Logout</button>
-      <button id="menuShopBtn">Shop</button>
-      <button id="menuSendCreditsBtn">Send <img src="EGP.png" alt="coin" class="coin-icon"></button>
-      <button id="menuExchangeBtn">Exchange</button>
-      <button id="menuSendPointsBtn">Send <img src="POINTS.png" alt="POINTS" class="pointcoin">
-</button>
-      <button id="menuCustomizeBtn">Customize</button>
-      <button id="menuNotificationsBtn">Notifications</button>
-      <button id="menuSendNotificationBtn">Send Notification</button>
-    </div>
-
-    <div id="panelShop" class="menu-panel">
-      <div class="panel-inner">
-        <h4 style="margin:0 0 8px 0;">Hours Shop (Spend <img src="EGP.png" alt="coin" class="coin-icon"> to remove hours)</h4>
-        <div id="shopItems"></div>
-      </div>
-    </div>
-
-    <div id="panelSendCredits" class="menu-panel">
-      <div class="panel-inner">
-        <label>Send to:</label>
-        <select id="sendToUser"></select>
-        <label>Amount:</label>
-        <input type="number" id="sendAmount" min="1" />
-        <button id="sendBtn">Send <img src="EGP.png" alt="coin" class="coin-icon"></button>
-      </div>
-    </div>
-
-    <div id="panelExchange" class="menu-panel">
-      <div class="panel-inner">
-        <h4 style="margin:0 0 8px 0;"><img src="POINTS.png" alt="POINTS" class="pointcoin">
- Exchange</h4>
-        <div id="pointsExchangeItems"></div>
-      </div>
-    </div>
-
-    <div id="panelSendPoints" class="menu-panel">
-      <div class="panel-inner">
-        <label>Send <img src="POINTS.png" alt="POINTS" class="pointcoin"> to:</label>
-        <select id="sendPointsToUser"></select>
-        <label><img src="POINTS.png" alt="POINTS" class="pointcoin"> amount:</label>
-        <input type="number" id="sendPointsAmount" min="1" />
-        <button id="sendPointsBtn">Send <img src="POINTS.png" alt="POINTS" class="pointcoin"></button>
-      </div>
-    </div>
-
-    <div id="panelNotifications" class="menu-panel">
-      <div class="panel-inner">
-        <h4 style="margin:0 0 8px 0;">Your Notifications</h4>
-        <div id="notificationsList">No notifications.</div>
-      </div>
-    </div>
-
-    <div id="panelSendNotification" class="menu-panel">
-      <div class="panel-inner">
-        <h4 style="margin:0 0 8px 0;">Send Notification</h4>
-        <label>To:</label>
-        <select id="notifyToUser"><option disabled selected>Select user</option></select>
-        <label>Title</label>
-        <input id="notifyTitle" placeholder="Short title" />
-        <label>Description</label>
-        <input id="notifyDescription" placeholder="Longer description" />
-        <button id="sendNotificationBtn">Send Notification</button>
-      </div>
-    </div>
-
-   <!-- panel with added pastels + three moving swatches -->
-<div id="panelCustomize" class="menu-panel">
-  <style>
-    /* small shared styles for swatches (keeps markup tidy) */
-    .palette { display:flex; gap:8px; flex-wrap:wrap; }
-    .sw {
-      width:36px;
-      height:36px;
-      border-radius:8px;
-      cursor:pointer;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12), inset 0 -1px 0 rgba(255,255,255,0.06);
-      border: 1px solid rgba(0,0,0,0.06);
-      transition: transform .12s ease, box-shadow .12s ease;
-    }
-    .sw:active { transform: scale(.96); }
-
-    /* animated/moving gradient swatch base */
-    .sw.animated {
-      background-size: 300% 100%;
-      animation: moveGradient 3s linear infinite;
-    }
-
-    /* optional variations for different speeds (if you want varied motion later) */
-    .sw.animated.slow { animation-duration: 5s; }
-    .sw.animated.fast { animation-duration: 2s; }
-
-    @keyframes moveGradient{
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-  </style>
-
-  <div class="panel-inner" style="display:flex;flex-direction:column;gap:8px;">
-    <div style="font-weight:700;">Choose island color</div>
-
-    <div class="palette" id="colorPalette">
-      <div class="sw" data-color="black" style="background:linear-gradient(90deg,#000,#000);"></div>
-      <div class="sw" data-color="red" style="background:linear-gradient(90deg,#ff4b4b,#c0392b);"></div>
-      <div class="sw" data-color="orange" style="background:linear-gradient(90deg,#ff8a00,#ff5e00);"></div>
-      <div class="sw" data-color="yellow" style="background:linear-gradient(90deg,#ffd54a,#ffb300);"></div>
-      <div class="sw" data-color="purple" style="background:linear-gradient(90deg,#9b59b6,#6a2a89);"></div>
-      <div class="sw" data-color="pink" style="background:linear-gradient(90deg,#ff7eb6,#ff4d94);"></div>
-      <div class="sw" data-color="green" style="background:linear-gradient(90deg,#2ecc71,#27ae60);"></div>
-
-      <!-- 3 additional beautiful light (pastel) colors -->
-      <div class="sw" data-color="pastel-mint" style="background:linear-gradient(90deg,#a8f0d1,#6fe8b3);"></div>
-
-      <!-- moving / animated swatches -->
-      <div class="sw animated" data-color="moving-aqua" title="Animated color — moving gradient" style="background: linear-gradient(90deg, #89f7fe, #66a6ff, #a1c4fd);"></div>
-
-      <!-- newly added: moving purple -->
-      <div class="sw animated" data-color="moving-purple" title="Animated purple — moving gradient" style="background: linear-gradient(90deg,#d9a7ff,#9b59b6,#6a2a89);"></div>
-
-      <!-- newly added: moving yellow -->
-      <div class="sw animated slow" data-color="moving-yellow" title="Animated yellow — moving gradient" style="background: linear-gradient(90deg,#fff7a8,#ffd54a,#ffcc33);"></div>
+<!-- hack overlay -->
+<div id="hackOverlay" class="hack-overlay" role="dialog" aria-modal="true">
+  <div class="hack-box">
+    <div class="green-big">HACK SIMULATOR</div>
+    <div id="hackFeed" class="hack-feed"></div>
+    <div class="hack-footer">
+      <div id="hackTimer" class="small">10:00</div>
+      <div class="muted">Keep this tab open. Hacking will run for 10 minutes. (This is simulation — it does not unlock admin features.)</div>
+      <button id="stopHackBtn" class="btn">Abort Hack</button>
     </div>
   </div>
 </div>
 
-  </div>
-</div>
-
-<div id="login-form">
-<h2>Login</h2>
-<input type="text" id="username" placeholder="Username" />
-<input type="password" id="password" placeholder="Password" />
-<label><input type="checkbox" id="keepSignedIn"> Keep me signed in</label>
-<button id="loginBtn">Login</button>
-</div>
-
-<div id="report-form" style="display:none;">
-<h2>Report Form</h2>
-<form id="reportForm">
-<label>Your Username</label>
-<input type="text" id="reporter" readonly />
-<label>Who is this report on?</label>
-<select id="reportedUser" required ></select>
-<label>Rules broken:</label>
-<div class="rules-list" id="rulesList"></div>
-<div id="total-hours">Total Hours Penalty: 0</div>
-<button type="submit" style="margin-top:20px;">Submit Report</button>
-</form>
-</div>
-
-<hr>
-<div id="eventsSection">
-<h2>Events</h2>
-<div id="eventsList">Loading events...</div>
-</div>
-
-<audio id="saveSignatureAudio" src="welcome.mp3" preload="auto"></audio>
-<audio id="applePayAudio" src="applepay.mp3" preload="auto"></audio>
-
-<script type="module">
-import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, get, update, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-// === FIREBASE CONFIG ===
-const firebaseConfig = {
-  apiKey: "AIzaSyAjeXycCBhYoAU-0iiC4LbSTylKrrThN8Y",
-  authDomain: "sharplabubu.firebaseapp.com",
-  databaseURL: "https://sharplabubu-default-rtdb.firebaseio.com",
-  projectId: "sharplabubu",
-  storageBucket: "sharplabubu.firebasestorage.app",
-  messagingSenderId: "596148393481",
-  appId: "1:596148393481:web:4f822d86c44a13bd810ad8",
-  measurementId: "G-4M25R3BF08"
+<script>
+/* ---------- Data model & storage ---------- */
+const STORAGE_KEY = 'hackerboard_data_v1';
+const ADMIN_KEY = 'hackerboard_admin_unlocked_session'; // stored in sessionStorage for the session
+let state = {
+  parts: []
 };
 
-let app;
-try { app = getApp(); } catch (e) { app = initializeApp(firebaseConfig); }
-const db = getDatabase(app);
-
-// === GLOBALS ===
-let currentUser = null, currentUserData = null;
-const hoursSpan = document.getElementById("hours-count");
-const creditsSpan = document.getElementById("credits-count");
-const pointsSpan = document.getElementById("points-count");
-const sigHoursLeftSpan = document.getElementById("sig-hours-left");
-const reportedUserSelect = document.getElementById("reportedUser");
-const sendToUserSelect = document.getElementById("sendToUser");
-const sendPointsToUserSelect = document.getElementById("sendPointsToUser");
-const notifyToUserSelect = document.getElementById("notifyToUser");
-const reporterInput = document.getElementById("reporter");
-const welcomeOverlay = document.getElementById("welcomeOverlay");
-const welcomeText = document.getElementById("welcomeText");
-const welcomeAudio = document.getElementById("welcomeAudio");
-const notifyDot = document.getElementById('notifyDot');
-
-// ---------- HOURS: helpers & countdown ----------
-const msPerHour = 1000 * 60 * 60;
-let hoursCountdownInterval = null;
-
-/**
- * Normalize a user's stored hours using users/{username}/hoursUpdatedAt (or lastLogin).
- * This subtracts whole hours that passed and preserves remainder milliseconds by adjusting hoursUpdatedAt.
- * Returns an object { hours, hoursUpdatedAt }.
- */
-async function normalizeUserHours(username, maybeData){
-  let data = maybeData;
-  if(!data){
-    const snap = await get(ref(db, `users/${username}`));
-    if(!snap.exists()) return { hours:0, hoursUpdatedAt: Date.now() };
-    data = snap.val();
-  }
-
-  const storedHours = Number(data.hours || 0);
-  let storedUpdatedAt = Number(data.hoursUpdatedAt || data.lastLogin || Date.now());
-  if(!storedUpdatedAt || isNaN(storedUpdatedAt)) storedUpdatedAt = Date.now();
-
-  const elapsedMs = Date.now() - storedUpdatedAt;
-  const elapsedWholeHours = Math.floor(elapsedMs / msPerHour);
-  if(elapsedWholeHours <= 0){
-    return { hours: storedHours, hoursUpdatedAt: storedUpdatedAt };
-  }
-
-  const newHours = Math.max(0, storedHours - elapsedWholeHours);
-  const remainderMs = elapsedMs - (elapsedWholeHours * msPerHour);
-  const newUpdatedAt = Date.now() - remainderMs; // preserve remainder
-
-  // persist normalized values
-  try{
-    const updates = {};
-    updates[`users/${username}/hours`] = newHours;
-    updates[`users/${username}/hoursUpdatedAt`] = newUpdatedAt;
-    await update(ref(db), updates);
-  }catch(e){
-    console.error('normalizeUserHours save failed', e);
-  }
-
-  return { hours: newHours, hoursUpdatedAt: newUpdatedAt };
-}
-
-function formatRemainingMs(ms){
-  if(ms <= 0) return '0h 0m 0s';
-  const h = Math.floor(ms / msPerHour);
-  const m = Math.floor((ms % msPerHour) / (60*1000));
-  const s = Math.floor((ms % (60*1000)) / 1000);
-  return `${h}h ${m}m ${s}s`;
-}
-
-function startUserHoursCountdown(){
-  stopUserHoursCountdown();
-  if(!currentUser || !currentUserData) return;
-
-  function tick(){
-    const hours = Number(currentUserData.hours || 0);
-    const updatedAt = Number(currentUserData.hoursUpdatedAt || currentUserData.lastLogin || Date.now());
-
-    if(hours <= 0){
-      hoursSpan.textContent = '0h 0m 0s';
-      if(currentUserData.hours !== 0){
-        update(ref(db), { [`users/${currentUser}/hours`]: 0, [`users/${currentUser}/hoursUpdatedAt`]: Date.now() }).catch(()=>{});
-        currentUserData.hours = 0;
-        currentUserData.hoursUpdatedAt = Date.now();
-      }
-      return;
-    }
-
-    const elapsedMs = Date.now() - updatedAt;
-    const totalMs = hours * msPerHour;
-    const remainingMs = Math.max(0, totalMs - elapsedMs);
-
-    if(remainingMs <= 0){
-      currentUserData.hours = 0;
-      currentUserData.hoursUpdatedAt = Date.now();
-      hoursSpan.textContent = '0h 0m 0s';
-      update(ref(db), { [`users/${currentUser}/hours`]: 0, [`users/${currentUser}/hoursUpdatedAt`]: Date.now() }).catch(()=>{});
-      return;
-    }
-
-    hoursSpan.textContent = formatRemainingMs(remainingMs);
-  }
-
-  tick();
-  hoursCountdownInterval = setInterval(tick, 1000);
-}
-
-function stopUserHoursCountdown(){
-  if(hoursCountdownInterval){ clearInterval(hoursCountdownInterval); hoursCountdownInterval = null; }
-}
-
-// ------------------- island clock + one-time welcome -------------------
-const islandLocalTimeEl = document.getElementById('islandLocalTime');
-const islandWelcomeEl = document.getElementById('islandWelcome');
-const islandUserNameEl = document.getElementById('islandUserName');
-
-let _islandClockInterval = null;
-
-function startIslandClock() {
-  function render() {
-    const now = new Date();
-    islandLocalTimeEl.textContent = now.toLocaleTimeString();
-  }
-  render();
-  if (_islandClockInterval) clearInterval(_islandClockInterval);
-  _islandClockInterval = setInterval(render, 1000);
-}
-function stopIslandClock() { if (_islandClockInterval) { clearInterval(_islandClockInterval); _islandClockInterval = null; } }
-
-function showWelcomeOnce(name, durationMs = 6000) {
-  if (!name) return;
-  if (!islandUserNameEl) return;
-  islandUserNameEl.textContent = name;
-  islandWelcomeEl.hidden = false;
-  islandWelcomeEl.classList.remove('hidden');
-  setTimeout(() => {
-    islandWelcomeEl.classList.add('hidden');
-    setTimeout(() => islandWelcomeEl.hidden = true, 240);
-  }, durationMs);
-}
-
-startIslandClock();
-
-// === DATA ARRAYS ===
-// Penalties are stored directly in HOURS (not days).
-const rules = [
-  { id: 'no_hit', title: 'No hit', hours: 1, points: 12.5, details: 'Do not physically hurt anyone, as a joke is ok +1 hour.' },
-  { id: 'no_scream', title: 'No scream', hours: 5, points: 12.5, details: 'Speak calmly, only when you are excited or angry +5 hours.' },
-  { id: 'no_cry', title: 'No cry', hours: 1, points: 12.5, details: 'Crying is not allowed +1 hour.' },
-  { id: 'zeyad_devices', title: 'Zeyad can no longer make you play with devices when you have hours.', hours: 20, points: 15, details: 'If Zeyad makes you play with devices when you have hours, +20 hours to Zeyad!' },
-  { id: 'no_fetn', title: 'No fetn', hours: 25, points: 15, details: "Don't make FETN. If someone tells you “blip” please don’t tell or repeat it to anyone. +25 hours." },
-  { id: 'no_bother', title: 'No bother', hours: 5, points: 12.5, details: 'Respect others. Don’t annoy them. +5 hours.' },
-  { id: 'respect', title: 'You have to respect', hours: 10, points: 12.5, details: 'Treat everyone kindly and with respect, always. +10 hours.' },
-  { id: 'no_listen', title: 'No listen', hours: 25, points: 15, details: 'You have to listen! If not, +25 hours.' },
-  { id: 'play_zezo', title: 'Play with Zezo', hours: 25, points: 15, details: 'You must play with Zezo. If not, +25 hours.' },
-  { id: 'no_sad', title: 'No sad', hours: 10, points: 12.5, details: 'Don’t be sad or +10 hours.' },
-  { id: 'no_devices', title: 'No devices when u have hours = 5 hours', hours: 5, points: 12.5, details: 'When you have hours, don’t use devices.' },
-  { id: 'no_copy', title: 'No copy', hours: 10, points: 15, details: 'You need proof (note, message) that someone gave you permission to copy them.' },
-  { id: 'no_angry', title: 'No angry', hours: 5, points: 12.5, details: 'Don’t be mad +5 hours.' },
-  { id: 'no_askzezo', title: 'dont asks zezo', hours: 15, points: 12.5, details: 'Don’t ask zezo about any events or discord all instructions are put +15 hours.' },
-  { id: 'dont_ask_zeyad', title: 'DONT ASK ZEYAD TO MAKE YOU PLAY WITH DEVICES IF YOU HAVE HOURS', hours: 25, points: 15, details: 'DONT ASK ZEYAD TO MAKE YOU PLAY WITH DEVICES IF YOU HAVE HOURS +50 hours' },
-  { id: 'no_lie', title: 'No lie', hours: 25, points: 15, details: 'Do not lie, always tell the truth. +25 hours.' },
-  { id: 'no_pause', title: 'No pause', hours: 10, points: 12.5, details: 'No pauses. +10 hours.' },
-  { id: 'no_funny', title: 'No funny', hours: -1, points: 1, details: 'No funny' },
-  { id: 'no_shetema', title: 'No shetema', hours: 10, points: 12.5, details: 'No shetema. +10 hours.' },
-  { id: 'no_pullhair', title: 'No pull hair', hours: 10, points: 12.5, details: 'No pull hair. +10 hours.' },
-  { id: 'no_pinch', title: 'No pinch', hours: 15, points: 12.5, details: 'No pinch. +15 hours.' },
-  { id: 'no_push', title: 'No push', hours: 10, points: 12.5, details: 'No push. +10 hours.' },
-  { id: 'no_scare', title: 'No scare', hours: 10, points: 12.5, details: 'No scare. +10 hours.' },
-  { id: 'no_dumb', title: 'No dumb', hours: 15, points: 15, details: 'No dumb. +15 hours.' },
-  { id: 'no_discord', title: 'no discord', hours: 25, points: 12.5, details: 'if you dont see discord labubu messgaes +25 hours.' },
-  { id: 'no_3ADY', title: 'No 3ADY', hours: 25, points: 15, details: 'No 3ADY or he can reort on you 3ADY. +25 hours.' }
+// sample initial data (one public part and one admin-only part)
+const sample = [
+  { id: genId(), title: "Public Updates", adminOnly: false, cards: [
+      { id: genId(), title: "Website skeleton", desc: "Initial framework & design", status: "Being Made", adminOnly: false },
+      { id: genId(), title: "Design green theme", desc: "Hacker green look", status: "Not Started", adminOnly: false }
+    ]},
+  { id: genId(), title: "Admin Abuse (private)", adminOnly: true, cards: [
+      { id: genId(), title: "Investigate logs", desc: "Check for suspicious admin actions", status: "Not Started", adminOnly:true },
+      { id: genId(), title: "Privileged card", desc: "Secret plan", status: "Confirmed", adminOnly:true }
+    ]}
 ];
 
-// shop items: HOURS are direct values (not days)
-const shopItems = [
-  { cost: 100, hours: 1 },
-  { cost: 450, hours: 5 },
-  { cost: 1450, hours: 15 },
-  { cost: 2450, hours: 25 },
-  { cost: 3450, hours: 35 },
-  { cost: 4450, hours: 45 },
-  { cost: 5450, hours: 55 },
-  { cost: 6450, hours: 65 },
-  { cost: 7450, hours: 75 },
-  { cost: 8950, hours: 85, points: 60 },
-  { cost: 10450, hours: 100, points: 75 }
-];
+function genId(){ return 'id_' + Math.random().toString(36).slice(2,9); }
 
-const pointsExchangeItems = [{points:100,credits:500},{points:300,credits:2000},{points:500,credits:5500},{points:1000,credits:12000},{points:2000,credits:24000},{points:3000,credits:37000},{points:4000,credits:50000}];
-
-function renderRules() {
-  const container = document.getElementById('rulesList');
-  container.innerHTML = '';
-  rules.forEach((r,i)=>{
-    const div = document.createElement('div');
-    div.className = 'rule-item';
-    div.dataset.id = r.id; div.dataset.hours = r.hours; div.dataset.points = r.points;
-    const textContainer = document.createElement('div'); textContainer.style.flex = '1'; textContainer.innerHTML = `<strong>${r.title}</strong><div class="rule-details">${r.details}</div>`;
-    const qtyInput = document.createElement('input'); qtyInput.type='number'; qtyInput.min=0; qtyInput.value=0; qtyInput.className='rule-qty'; qtyInput.addEventListener('input', updateTotalHours);
-    div.appendChild(textContainer); div.appendChild(qtyInput);
-    div.addEventListener('click',(e)=>{ if(e.target.tagName.toLowerCase() !== 'input'){ div.classList.toggle('selected'); if(div.classList.contains('selected') && qtyInput.value==0) qtyInput.value = 1; else if(!div.classList.contains('selected')) qtyInput.value = 0; updateTotalHours(); } });
-    container.appendChild(div);
-    if(i < rules.length -1){ const hr = document.createElement('hr'); hr.style.margin='5px 0'; container.appendChild(hr); }
-  });
-}
-renderRules();
-
-function updateTotalHours(){ let total = 0; document.querySelectorAll('.rule-item').forEach(item=>{ const qty = parseInt(item.querySelector('input').value)||0; const hoursPer = parseInt(item.dataset.hours); total += hoursPer * qty; }); document.getElementById('total-hours').textContent = `Total Hours Penalty: ${total}`; }
-
-// === USERS DROPDOWNS ===
-async function loadUsersDropdowns(){
-  const snap = await get(ref(db, "users"));
-  if(snap.exists()){
-    reportedUserSelect.innerHTML = `<option disabled selected>Select user</option>`;
-    sendToUserSelect.innerHTML = `<option disabled selected>Select user</option>`;
-    sendPointsToUserSelect.innerHTML = `<option disabled selected>Select user</option>`;
-    notifyToUserSelect.innerHTML = `<option disabled selected>Select user</option>`;
-    Object.keys(snap.val()).forEach(user=>{
-      reportedUserSelect.innerHTML += `<option value="${user}">${user}</option>`;
-      if(user !== currentUser) {
-        sendToUserSelect.innerHTML += `<option value="${user}">${user}</option>`;
-        sendPointsToUserSelect.innerHTML += `<option value="${user}">${user}</option>`;
-        notifyToUserSelect.innerHTML += `<option value="${user}">${user}</option>`;
-      }
-    });
+function loadState(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){
+    try{
+      state = JSON.parse(raw);
+    }catch(e){
+      console.error("failed parse storage", e);
+      state = { parts: [] };
+    }
+  } else {
+    state.parts = sample;
+    saveState();
   }
 }
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-// === LOGIN / LOGOUT ===
-async function login(username, password, keep, isAutoLogin = false){
-  const userRef = ref(db, `users/${username}`);
-  const snap = await get(userRef);
-  if(!snap.exists()) return alert("User not found");
-  const data = snap.val();
-  if(data.password !== password) return alert("Incorrect password");
+/* ---------- Admin unlock logic ---------- */
+let adminUnlocked = sessionStorage.getItem(ADMIN_KEY) === '1';
 
-  currentUser = username;
+const codeInput = document.getElementById('codeInput');
+const unlockBtn = document.getElementById('unlockBtn');
+const addPartBtn = document.getElementById('addPartBtn');
+const adminStatus = document.getElementById('adminStatus');
 
-  // Normalize stored hours (subtract whole hours that passed)
-  const normalized = await normalizeUserHours(username, data);
-  const updatedHours = normalized.hours;
-  const updatedAt = normalized.hoursUpdatedAt || Date.now();
+function setAdminUnlocked(val){
+  adminUnlocked = !!val;
+  sessionStorage.setItem(ADMIN_KEY, adminUnlocked ? '1' : '0');
+  adminStatus.textContent = adminUnlocked ? 'Admin: unlocked' : 'Locked';
+  addPartBtn.disabled = !adminUnlocked;
+  renderBoard();
+}
 
-  const signature = data.signature || null; const expiry = signature?.expiry || 0;
-  if(!signature || expiry <= Date.now()){
-    await update(userRef, { hours: 0, credits: 0, points: 0, signature: null, lastLogin: Date.now() });
-    alert("Your signature expired or not found. You need to create a new signature now.");
-    window.location.href = "signature.html?user=" + encodeURIComponent(username);
+unlockBtn.addEventListener('click', ()=>{
+  const code = codeInput.value.trim();
+  if(code === '555'){
+    setAdminUnlocked(true);
+    flashNotice("Unlocked: admin features enabled");
+    codeInput.value = '';
+  } else {
+    flashNotice("Wrong code");
+  }
+});
+codeInput.addEventListener('keydown', e=>{
+  if(e.key === 'Enter') unlockBtn.click();
+});
+
+/* ---------- UI rendering ---------- */
+const boardEl = document.getElementById('board');
+
+function renderBoard(){
+  boardEl.innerHTML = '';
+  if(state.parts.length === 0){
+    boardEl.innerHTML = '<div class="ghost">No parts yet. Add a part to start.</div>';
     return;
   }
+  state.parts.forEach(part => {
+    // skip adminOnly parts if not unlocked
+    if(part.adminOnly && !adminUnlocked) return;
 
-  await update(userRef, { lastLogin: Date.now() }).catch(()=>{});
-  const freshSnap = await get(userRef);
-  const freshData = freshSnap.exists() ? freshSnap.val() : data;
+    const partEl = document.createElement('div');
+    partEl.className = 'part';
+    partEl.dataset.partId = part.id;
+    partEl.innerHTML = `
+      <div class="part-header">
+        <div class="part-title">${escapeHtml(part.title)}</div>
+        ${part.adminOnly ? '<div class="part-admin">ADMIN</div>' : ''}
+        <div class="part-actions">
+          <button class="btn editPartBtn">Edit</button>
+          <button class="btn delPartBtn">Delete</button>
+          <button class="btn addCardBtn" ${adminUnlocked ? '' : 'disabled'}>Add Card</button>
+        </div>
+      </div>
+      <div class="cards"></div>
+    `;
+    const cardsContainer = partEl.querySelector('.cards');
 
-  currentUserData = Object.assign({}, freshData, { hours: updatedHours, hoursUpdatedAt: updatedAt, lastLogin: Date.now() });
+    // render each card
+    (part.cards || []).forEach(card=>{
+      if(card.adminOnly && !adminUnlocked) return;
+      const cardEl = document.createElement('div');
+      cardEl.className = 'card';
+      cardEl.dataset.cardId = card.id;
+      cardEl.innerHTML = `
+        <div class="title">${escapeHtml(card.title)}</div>
+        <div class="desc">${escapeHtml(card.desc || '')}</div>
+        <div class="meta">
+          <div class="status-pill status-${escapeHtml(card.status)}">${escapeHtml(card.status)}</div>
+          ${card.adminOnly ? '<div class="small">[admin]</div>' : ''}
+          <div class="controls-2" style="margin-left:auto">
+            <select class="statusSelect small">
+              <option>Not Started</option>
+              <option>Being Made</option>
+              <option>Confirmed</option>
+              <option>Done</option>
+            </select>
+            <button class="btn editCardBtn small">Edit</button>
+            <button class="btn delCardBtn small" style="background:rgba(255,77,77,0.06); border-color:rgba(255,77,77,0.12);">Delete</button>
+          </div>
+        </div>
+      `;
+      // set the select value
+      const sel = cardEl.querySelector('.statusSelect');
+      sel.value = card.status;
 
-  if(!isAutoLogin){
-    welcomeText.textContent = `Welcome back, ${username}!`;
-    welcomeOverlay.style.display = "flex";
-    await new Promise(resolve=>{ function onClick(){ welcomeOverlay.removeEventListener('click', onClick); welcomeAudio.play(); welcomeOverlay.style.transition = 'opacity 0.7s ease'; welcomeOverlay.style.opacity = 0; setTimeout(()=>{ welcomeOverlay.style.display = 'none'; welcomeOverlay.style.opacity = 1; resolve(); },700); } welcomeOverlay.addEventListener('click', onClick); });
-  }
+      // event bindings
+      sel.addEventListener('change', ()=>{
+        card.status = sel.value;
+        saveState();
+        renderBoard();
+      });
 
-  document.getElementById("login-form").style.display = "none";
-  document.getElementById("report-form").style.display = "block";
-  reporterInput.value = username;
+      cardEl.querySelector('.editCardBtn').addEventListener('click', ()=> openEditCardModal(part.id, card.id));
+      cardEl.querySelector('.delCardBtn').addEventListener('click', ()=> {
+        if(confirm('Delete this card?')) {
+          part.cards = part.cards.filter(c=>c.id !== card.id);
+          saveState(); renderBoard();
+        }
+      });
 
-  // show values
-  creditsSpan.textContent = currentUserData.credits || 0;
-  pointsSpan.textContent = currentUserData.points || 0;
-  sigHoursLeftSpan.textContent = (() => {
-    const s = currentUserData.signature?.expiry || 0;
-    const left = Math.ceil((s - Date.now()) / msPerHour);
-    return left > 0 ? left : 0;
-  })();
-
-  await loadUsersDropdowns();
-
-  // start listening to notifications
-  listenToNotifications();
-
-  // start the hours countdown UI
-  startUserHoursCountdown();
-}
-
-function logout(){ 
-  currentUser = null; 
-  currentUserData = null; 
-  localStorage.removeItem('loginData'); 
-  sessionStorage.removeItem('loginData'); 
-  document.getElementById('login-form').style.display='block'; 
-  document.getElementById('report-form').style.display='none'; 
-  closeIslandMenu(); 
-  updateNotifyDot(0); 
-  stopUserHoursCountdown();
-}
-
-// === SHOP / POINTS RENDER (same ids used inside island menu) ===
-function renderShopItems(){
-  const shopContainer = document.getElementById('shopItems');
-  shopContainer.innerHTML = '';
-  shopItems.forEach(item=>{
-    shopContainer.innerHTML += `<button onclick="buyItem(${item.cost}, ${item.hours})">Buy: ${item.cost} <img src=\"EGP.png\" class=\"coin-icon\" alt=\"coin\"> → Remove ${item.hours} hours</button><br>`;
-  });
-}
-renderShopItems();
-
-function renderPointsExchangeItems(){
-  const exchangeContainer = document.getElementById('pointsExchangeItems');
-  exchangeContainer.innerHTML = '';
-  pointsExchangeItems.forEach(item=>{
-    exchangeContainer.innerHTML += `<button onclick="exchangePoints(${item.points}, ${item.credits})">Exchange ${item.points} Points → ${item.credits} <img src=\"EGP.png\" class=\"coin-icon\" alt=\"coin\"></button><br>`;
-  });
-}
-renderPointsExchangeItems();
-
-// === ISLAND MENU BEHAVIOR (position & seamless open) ===
-const islandEl = document.getElementById('dynamic-island');
-const islandMenu = document.getElementById('islandMenu');
-
-function positionIslandMenu(){
-  const rect = islandEl.getBoundingClientRect();
-  let maxAllowed = Math.min(window.innerWidth - 20, 520);
-  if(window.innerWidth <= 420) maxAllowed = Math.min(window.innerWidth - 20, 380);
-  const menuWidth = Math.max(Math.min(maxAllowed, 520), 320);
-  const left = Math.round((window.innerWidth - menuWidth) / 2);
-  const top = Math.round(rect.bottom + 8);
-  islandMenu.style.left = `${left}px`;
-  islandMenu.style.top = `${top}px`;
-  islandMenu.style.width = `${menuWidth}px`;
-  islandMenu.style.borderTopLeftRadius = `20px`;
-  islandMenu.style.borderTopRightRadius = `20px`;
-  islandMenu.style.borderBottomLeftRadius = `22px`;
-  islandMenu.style.borderBottomRightRadius = `22px`;
-  return menuWidth;
-}
-
-let islandOpen = false;
-function openIslandMenu(){
-  const rect = islandEl.getBoundingClientRect();
-  const closedWidth = rect.width;
-  islandEl.dataset.closedWidth = closedWidth;
-  const menuWidth = positionIslandMenu();
-  islandEl.style.width = `${menuWidth}px`;
-  islandEl.style.borderBottomLeftRadius = `14px`;
-  islandEl.style.borderBottomRightRadius = `14px`;
-  const bg = getComputedStyle(document.documentElement).getPropertyValue('--island-bg');
-  islandEl.style.background = bg;
-  islandMenu.style.background = bg;
-  islandMenu.classList.add('open');
-  islandMenu.setAttribute('aria-hidden', 'false');
-  islandOpen = true;
-  showMenuPanel('panelShop', 'menuShopBtn');
-}
-
-function closeIslandMenu(){
-  islandMenu.classList.remove('open');
-  islandMenu.setAttribute('aria-hidden', 'true');
-  islandOpen = false;
-  const closedWidth = islandEl.dataset.closedWidth || '';
-  if(closedWidth){
-    islandEl.style.width = `${closedWidth}px`;
-    islandEl.style.borderBottomLeftRadius = '';
-    islandEl.style.borderBottomRightRadius = '';
-    const reset = () => { islandEl.style.width = ''; islandEl.removeEventListener('transitionend', reset); };
-    islandEl.addEventListener('transitionend', reset);
-    setTimeout(()=>{ if(islandEl.style.width !== ''){ islandEl.style.width = ''; } }, 400);
-  }
-  document.querySelectorAll('.menu-actions button').forEach(b => b.classList.remove('active'));
-}
-
-islandEl.addEventListener('click', (e)=>{
-  if(islandOpen && islandMenu.contains(e.target)) return;
-  if(!islandOpen) openIslandMenu(); else closeIslandMenu();
-});
-window.addEventListener('resize', ()=>{ if(islandOpen) positionIslandMenu(); });
-window.addEventListener('scroll', ()=>{ if(islandOpen) positionIslandMenu(); });
-document.addEventListener('click', (e)=>{ if(!islandEl.contains(e.target) && !islandMenu.contains(e.target)) closeIslandMenu(); });
-
-function showMenuPanel(panelId, buttonId){
-  document.querySelectorAll('.menu-panel').forEach(p => p.classList.remove('show'));
-  const panel = document.getElementById(panelId);
-  if(panel) panel.classList.add('show');
-  document.querySelectorAll('.menu-actions button').forEach(b => b.classList.remove('active'));
-  if(buttonId) document.getElementById(buttonId).classList.add('active');
-  positionIslandMenu();
-}
-
-document.getElementById('menuShopBtn').addEventListener('click', ()=> showMenuPanel('panelShop','menuShopBtn'));
-document.getElementById('menuSendCreditsBtn').addEventListener('click', ()=> showMenuPanel('panelSendCredits','menuSendCreditsBtn'));
-document.getElementById('menuExchangeBtn').addEventListener('click', ()=> showMenuPanel('panelExchange','menuExchangeBtn'));
-document.getElementById('menuSendPointsBtn').addEventListener('click', ()=> showMenuPanel('panelSendPoints','menuSendPointsBtn'));
-document.getElementById('menuCustomizeBtn').addEventListener('click', ()=> showMenuPanel('panelCustomize','menuCustomizeBtn'));
-document.getElementById('menuNotificationsBtn').addEventListener('click', ()=> showMenuPanel('panelNotifications','menuNotificationsBtn'));
-document.getElementById('menuSendNotificationBtn').addEventListener('click', ()=> showMenuPanel('panelSendNotification','menuSendNotificationBtn'));
-
-// --- color palette inside island menu ---
-const colorPalette = document.getElementById('colorPalette');
-colorPalette.querySelectorAll('.sw').forEach(sw=>{
-  sw.addEventListener('click', ()=>{
-    const c = sw.dataset.color;
-    applyIslandColor(c);
-    localStorage.setItem('islandColor', c);
-  });
-});
-
-function applyIslandColor(name){
-  let css = '';
-    switch(name){
-    case 'black': css = '#000'; break;
-    case 'red': css = 'linear-gradient(90deg,#ff4b4b,#c0392b)'; break;
-    case 'orange': css = 'linear-gradient(90deg,#ff8a00,#ff5e00)'; break;
-    case 'yellow': css = 'linear-gradient(90deg,#ffd54a,#ffb300)'; break;
-    case 'purple': css = 'linear-gradient(90deg,#9b59b6,#6a2a89)'; break;
-    case 'pink': css = 'linear-gradient(90deg,#ff7eb6,#ff4d94)'; break;
-    case 'green': css = 'linear-gradient(90deg,#2ecc71,#27ae60)'; break;
-    case 'pastel-mint': css = 'linear-gradient(90deg,#a8f0d1,#6fe8b3)'; break;
-    case 'moving-aqua': css = 'linear-gradient(90deg,#89f7fe, #66a6ff, #a1c4fd)'; break;
-    case 'moving-purple': css = 'linear-gradient(90deg,#d9a7ff,#9b59b6,#6a2a89)'; break;
-    case 'moving-yellow': css = 'linear-gradient(90deg,#fff7a8,#ffd54a,#ffcc33)'; break;
-    default: css = '#000';
-  }
-  document.documentElement.style.setProperty('--island-bg', css);
-  islandEl.style.background = css;
-  islandMenu.style.background = css;
-}
-const savedColor = localStorage.getItem('islandColor'); if(savedColor) applyIslandColor(savedColor);
-
-// === PANEL TOGGLING (used by island menu) ===
-function hideAllPanels(){ document.querySelectorAll('.menu-panel').forEach(el => el.classList.remove('show')); }
-window.togglePanel = (id) => { const el = document.getElementById(id); if(!el) return; el.classList.toggle('show'); }
-
-// === BUY / EXCHANGE / SEND FUNCTIONS ===
-async function buyItem(cost, hoursToRemove){
-  if(!currentUser) return alert('Please login first.');
-  if((currentUserData.credits||0) < cost) return alert('Not enough credits.');
-  if((currentUserData.hours||0) < hoursToRemove) return alert(`You don't have enough hours to remove (${hoursToRemove} required).`);
-  try{
-    const applePayAudio = document.getElementById('applePayAudio');
-    try{ await applePayAudio.play(); }catch(e){}
-    const bankAmount = Math.floor(cost * 0.90); const zezoAmount = cost - bankAmount;
-    const bankRef = ref(db, `users/bank`); const zezoRef = ref(db, `users/zezo`);
-    const [bankSnap,zezoSnap] = await Promise.all([ get(bankRef), get(zezoRef) ]);
-    const bankData = bankSnap.exists()?bankSnap.val():{credits:0}; const zezoData = zezoSnap.exists()?zezoSnap.val():{credits:0};
-    const updates = {};
-    updates[`users/${currentUser}/credits`] = (currentUserData.credits||0) - cost;
-    updates[`users/${currentUser}/hours`] = (currentUserData.hours||0) - hoursToRemove;
-    // updatedAt set to now so countdown continues from now
-    updates[`users/${currentUser}/hoursUpdatedAt`] = Date.now();
-    updates[`users/bank/credits`] = (bankData.credits||0) + bankAmount;
-    updates[`users/zezo/credits`] = (zezoData.credits||0) + zezoAmount;
-    await update(ref(db), updates);
-    currentUserData.credits -= cost;
-    currentUserData.hours -= hoursToRemove;
-    currentUserData.hoursUpdatedAt = Date.now();
-    creditsSpan.textContent = currentUserData.credits;
-    // restart countdown to reflect immediate removal
-    startUserHoursCountdown();
-    alert(`Bought item for ${cost} credits. Removed ${hoursToRemove} hours. 90% went to Bank and remainder to Zezo.`);
-  }catch(err){ console.error(err); alert('Failed to complete purchase: '+err.message); }
-}
-window.buyItem = buyItem;
-
-async function exchangePoints(pointsToExchange, creditsToReceive){ if(!currentUser) return alert('Please login first.'); if((currentUserData.points||0) < pointsToExchange) return alert('Not enough points to make this exchange.');
-  const newPoints = (currentUserData.points||0) - pointsToExchange; const newCredits = (currentUserData.credits||0) + creditsToReceive;
-  try{ const userRef = ref(db, `users/${currentUser}`); await update(userRef, { points: newPoints, credits: newCredits }); currentUserData.points = newPoints; currentUserData.credits = newCredits; pointsSpan.textContent = currentUserData.points; creditsSpan.textContent = currentUserData.credits; alert(`Exchanged ${pointsToExchange} points for ${creditsToReceive} credits!`); }catch(err){ console.error(err); alert('Failed to complete exchange.'); }
-}
-window.exchangePoints = exchangePoints;
-
-async function sendCredits(){ if(!currentUser) return alert('Please login first.'); const toUser = sendToUserSelect.value; const amount = parseInt(document.getElementById('sendAmount').value); if(!toUser) return alert('Select a user to send credits to.'); if(!amount || amount<=0) return alert('Enter a valid amount.'); if((currentUserData.credits||0) < amount) return alert('Not enough credits.');
-  const senderRef = ref(db, `users/${currentUser}`); const receiverRef = ref(db, `users/${toUser}`);
-  try{ const receiverSnap = await get(receiverRef); if(!receiverSnap.exists()) return alert('Receiver user not found.'); const receiverCredits = receiverSnap.val().credits||0; const updates = {};
-    updates[`users/${currentUser}/credits`] = (currentUserData.credits||0) - amount;
-    updates[`users/${toUser}/credits`] = receiverCredits + amount;
-    await update(ref(db), updates);
-    currentUserData.credits -= amount; creditsSpan.textContent = currentUserData.credits; alert(`Sent ${amount} credits to ${toUser}.`);
-  }catch(err){ console.error(err); alert('Failed to send credits.'); }
-}
-window.sendCredits = sendCredits;
-
-async function sendPoints(){ if(!currentUser) return alert('Please login first.'); const toUser = sendPointsToUserSelect.value; const amount = parseInt(document.getElementById('sendPointsAmount').value); if(!toUser) return alert('Select a user to send points to.'); if(!amount || amount<=0) return alert('Enter a valid amount.'); if((currentUserData.points||0) < amount) return alert('Not enough points.');
-  const senderRef = ref(db, `users/${currentUser}`); const receiverRef = ref(db, `users/${toUser}`);
-  try{
-    const receiverSnap = await get(receiverRef); if(!receiverSnap.exists()) return alert('Receiver user not found.');
-    const receiverPoints = receiverSnap.val().points||0;
-    const updates = {};
-    updates[`users/${currentUser}/points`] = (currentUserData.points||0) - amount;
-    updates[`users/${toUser}/points`] = receiverPoints + amount;
-    await update(ref(db), updates);
-    currentUserData.points -= amount; pointsSpan.textContent = currentUserData.points; alert(`Sent ${amount} points to ${toUser}.`);
-  }catch(err){ console.error(err); alert('Failed to send points.'); }
-}
-window.sendPoints = sendPoints;
-
-// === NOTIFICATIONS ===
-async function sendNotification(){
-  if(!currentUser) return alert('Please login first.');
-  const to = notifyToUserSelect.value; const title = document.getElementById('notifyTitle').value.trim(); const description = document.getElementById('notifyDescription').value.trim();
-  if(!to) return alert('Select a recipient'); if(!title) return alert('Enter a title');
-  const nref = push(ref(db, 'notifications'));
-  const notif = { from: currentUser, to, title, description, timestamp: Date.now(), read: false };
-  try{ await update(nref, notif); document.getElementById('notifyTitle').value=''; document.getElementById('notifyDescription').value=''; alert('Notification sent'); }catch(err){ console.error(err); alert('Failed to send notification'); }
-}
-
-document.getElementById('sendNotificationBtn').addEventListener('click', sendNotification);
-
-let notificationsCache = {}; // local cache keyed by id
-
-function listenToNotifications(){
-  const notificationsRef = ref(db, 'notifications');
-  onValue(notificationsRef, (snap)=>{
-    const all = snap.exists() ? snap.val() : {};
-    const myNotifs = [];
-    Object.entries(all).forEach(([id, n])=>{
-      if(n && n.to === currentUser){ myNotifs.push({ id, ...n }); }
+      cardsContainer.appendChild(cardEl);
     });
-    myNotifs.sort((a,b)=> b.timestamp - a.timestamp);
-    notificationsCache = {};
-    myNotifs.forEach(n => notificationsCache[n.id] = n);
-    renderNotificationsList(myNotifs);
-    const unread = myNotifs.filter(n=>!n.read).length;
-    updateNotifyDot(unread);
-  });
-}
 
-function updateNotifyDot(count){ if(count && count > 0){ notifyDot.classList.add('active'); } else { notifyDot.classList.remove('active'); } }
-
-function formatWhen(ts){ const d = new Date(ts); return d.toLocaleString(); }
-
-function renderNotificationsList(list){
-  const container = document.getElementById('notificationsList');
-  if(!list || list.length === 0){ container.innerHTML = 'No notifications.'; return; }
-  container.innerHTML = '';
-  list.forEach(n=>{
-    const div = document.createElement('div');
-    div.className = 'notification-item' + (n.read? '' : ' unread');
-    div.dataset.id = n.id;
-    div.innerHTML = `<strong>${escapeHtml(n.title)}</strong><div class="notification-meta">From: ${escapeHtml(n.from)} • ${formatWhen(n.timestamp)}</div>`;
-    div.addEventListener('click', ()=> showNotificationDetails(n.id));
-    container.appendChild(div);
-  });
-}
-
-async function showNotificationDetails(id){
-  const n = notificationsCache[id]; if(!n) return alert('Notification not found');
-  const details = `From: ${n.from}\nTitle: ${n.title}\nWhen: ${formatWhen(n.timestamp)}\n\n${n.description || ''}`;
-  alert(details);
-  if(!n.read){ try{ const nr = ref(db, `notifications/${id}`); await update(nr, { read: true }); }catch(err){ console.error(err); } }
-}
-
-async function deleteNotification(id){ if(!confirm('Delete this notification?')) return; try{ await remove(ref(db, `notifications/${id}`)); alert('Deleted'); }catch(err){ console.error(err); alert('Failed to delete'); } }
-
-function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>\"']/g, function(m){ return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;" }[m]; }); }
-
-// === EVENTS SECTION ===
-function formatCountdown(msLeft){ if(msLeft <= 0) return 'Expired'; const totalSeconds = Math.floor(msLeft/1000); const days = Math.floor(totalSeconds/(24*3600)); const hours = Math.floor((totalSeconds%(24*3600))/3600); const minutes = Math.floor((totalSeconds%3600)/60); const seconds = totalSeconds%60; let parts = []; if(days>0) parts.push(`${days}d`); if(hours>0||days>0) parts.push(`${hours}h`); if(minutes>0||hours>0||days>0) parts.push(`${minutes}m`); parts.push(`${seconds}s`); return parts.join(' '); }
-const eventsRef = ref(db, 'events');
-function renderEvents(events){ const eventsListEl = document.getElementById('eventsList'); eventsListEl.innerHTML = ''; const now = Date.now(); let hasEvents = false; Object.entries(events||{}).forEach(([eventId,ev])=>{
-  if(!ev.endTime || now > ev.endTime){ remove(ref(db, `events/${eventId}`)); return; }
-  hasEvents = true;
-  const div = document.createElement('div'); div.className = 'event-item';
-  const titleEl = document.createElement('h4'); titleEl.textContent = ev.title; div.appendChild(titleEl);
-  const detailsEl = document.createElement('p'); detailsEl.textContent = ev.description; div.appendChild(detailsEl);
-  const countdownEl = document.createElement('p'); countdownEl.className = 'countdown'; div.appendChild(countdownEl);
-  function updateCountdown(){ const msLeft = ev.endTime - Date.now(); if(msLeft <= 0){ countdownEl.textContent = 'Time left: Expired'; remove(ref(db, `events/${eventId}`)); return; } countdownEl.textContent = `Time left: ${formatCountdown(msLeft)}`; }
-  updateCountdown(); setInterval(updateCountdown,1000);
-  eventsListEl.appendChild(div);
-});
-if(!hasEvents) eventsListEl.textContent = 'No active events at this time.'; }
-onValue(eventsRef, (snapshot)=>{ renderEvents(snapshot.val()); });
-
-// === REPORT SUBMIT (merged with Discord webhook) ===
-document.getElementById('reportForm').onsubmit = async e => {
-  e.preventDefault(); if(!currentUser) return alert('Please login first.'); const reportedUser = reportedUserSelect.value; if(!reportedUser) return alert('Please select the user you want to report.');
-  const selectedRules = []; let totalHours = 0; let totalPoints = 0;
-  document.querySelectorAll('.rule-item').forEach(item=>{ const qty = parseInt(item.querySelector('input').value)||0; if(qty>0){ const hoursPer = parseInt(item.dataset.hours); const pointsPer = parseInt(item.dataset.points); selectedRules.push({ id: item.dataset.id, title: item.querySelector('strong').textContent, qty, hoursPerOffense: hoursPer, pointsPerOffense: pointsPer }); totalHours += hoursPer * qty; totalPoints += pointsPer * qty; } });
-  if(selectedRules.length === 0) return alert('Please select at least one rule broken.');
-  const report = { reporter: currentUser, reportedUser, rules: selectedRules, totalHours, totalPoints, timestamp: Date.now() };
-
-  try{
-    const autoAcceptSnap = await get(ref(db, 'settings/autoAcceptReports'));
-    const autoAccept = autoAcceptSnap.exists() && autoAcceptSnap.val() === true;
-
-    if(autoAccept){
-      const reportedUserRef = ref(db, `users/${reportedUser}`);
-      const reporterUserRef = ref(db, `users/${currentUser}`);
-      const [reportedUserSnap, reporterUserSnap] = await Promise.all([ get(reportedUserRef), get(reporterUserRef) ]);
-      const reportedUserData = reportedUserSnap.val() || {};
-      const reporterUserData = reporterUserSnap.val() || {};
-
-      // Normalize reported user's hours so we add to the *remaining* hours
-      const normalizedReported = await normalizeUserHours(reportedUser, reportedUserData);
-      const newReportedHours = Number(normalizedReported.hours || 0) + Number(totalHours);
-      const newReporterPoints = (Number(reporterUserData.points||0) + Number(totalPoints));
-      const updates = {};
-      updates[`users/${reportedUser}/hours`] = newReportedHours;
-      // set hoursUpdatedAt to now because we just added hours
-      updates[`users/${reportedUser}/hoursUpdatedAt`] = Date.now();
-      updates[`users/${currentUser}/points`] = newReporterPoints;
-      await update(ref(db), updates);
-
-      currentUserData.points = newReporterPoints; pointsSpan.textContent = currentUserData.points;
-      alert(`Report auto accepted: ${totalHours} hours added to ${reportedUser}, and you received ${totalPoints} points.`);
-
-      // if the reported user is the currently logged-in user, refresh their countdown
-      if(reportedUser === currentUser){
-        currentUserData.hours = newReportedHours;
-        currentUserData.hoursUpdatedAt = Date.now();
-        startUserHoursCountdown();
+    // part actions
+    partEl.querySelector('.addCardBtn').addEventListener('click', ()=> openAddCardModal(part.id));
+    partEl.querySelector('.delPartBtn').addEventListener('click', ()=>{
+      if(confirm('Delete this part and all its cards?')) {
+        state.parts = state.parts.filter(p=>p.id !== part.id);
+        saveState(); renderBoard();
       }
-    } else {
-      const newReportRef = push(ref(db, 'reports'));
-      await update(newReportRef, report);
-      alert('Report submitted for manual approval. You will receive points upon approval.');
+    });
+    partEl.querySelector('.editPartBtn').addEventListener('click', ()=> openEditPartModal(part.id));
+
+    boardEl.appendChild(partEl);
+  });
+}
+
+/* ---------- helpers ---------- */
+function escapeHtml(s){ return (s+'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+function flashNotice(t){
+  // quick console-like flash
+  const el = document.createElement('div');
+  el.textContent = t;
+  el.style.position='fixed'; el.style.right='18px'; el.style.bottom='18px';
+  el.style.background='rgba(0,0,0,0.6)'; el.style.color='var(--accent)';
+  el.style.padding='8px 12px'; el.style.borderRadius='8px'; el.style.zIndex=99999;
+  document.body.appendChild(el);
+  setTimeout(()=> el.remove(),2200);
+}
+
+/* ---------- Add / Edit modals (built with prompt() to keep single file) ---------- */
+function openAddCardModal(partId){
+  const part = state.parts.find(p=>p.id===partId);
+  if(!part) return;
+  if(!adminUnlocked){ flashNotice('Add Card requires admin unlock'); return; }
+
+  const title = prompt('Card title:');
+  if(!title) return;
+  const desc = prompt('Card description:') || '';
+  const isAdminOnly = confirm('Make this card admin-only (hidden until unlock)? OK = yes, Cancel = no');
+  const card = { id: genId(), title: title.trim(), desc: desc.trim(), status: 'Not Started', adminOnly: !!isAdminOnly };
+  part.cards = part.cards || [];
+  part.cards.push(card);
+  saveState(); renderBoard();
+}
+
+function openEditCardModal(partId, cardId){
+  const part = state.parts.find(p=>p.id===partId);
+  if(!part) return;
+  const card = part.cards.find(c=>c.id===cardId);
+  if(!card) return;
+  if(card.adminOnly && !adminUnlocked){ flashNotice('Cannot edit admin-only card while locked'); return; }
+  const title = prompt('Edit card title:', card.title);
+  if(title === null) return;
+  const desc = prompt('Edit description:', card.desc || '') || '';
+  const makeAdmin = confirm('Make admin-only? OK = yes, Cancel = no');
+  card.title = title.trim();
+  card.desc = desc.trim();
+  card.adminOnly = !!makeAdmin;
+  saveState(); renderBoard();
+}
+
+function openEditPartModal(partId){
+  const part = state.parts.find(p=>p.id===partId);
+  if(!part) return;
+  const title = prompt('Edit part title:', part.title);
+  if(title === null) return;
+  const makeAdmin = confirm('Make this part admin-only? OK = yes, Cancel = no');
+  part.title = title.trim();
+  part.adminOnly = !!makeAdmin;
+  saveState(); renderBoard();
+}
+
+/* ---------- Add Part button ---------- */
+addPartBtn.addEventListener('click', ()=>{
+  if(!adminUnlocked){ flashNotice('Add Part requires admin unlock'); return; }
+  const title = prompt('Part (column) title:');
+  if(!title) return;
+  const makeAdmin = confirm('Make this part admin-only? OK = yes, Cancel = no');
+  state.parts.push({ id: genId(), title: title.trim(), adminOnly: !!makeAdmin, cards: [] });
+  saveState(); renderBoard();
+});
+
+/* ---------- initial load ---------- */
+loadState();
+setAdminUnlocked(adminUnlocked);
+renderBoard();
+
+/* ---------- Hack simulator (10 minutes) ---------- */
+const hackBtn = document.getElementById('hackBtn');
+const hackOverlay = document.getElementById('hackOverlay');
+const hackFeed = document.getElementById('hackFeed');
+const hackTimer = document.getElementById('hackTimer');
+const stopHackBtn = document.getElementById('stopHackBtn');
+
+let hackInterval = null;
+let hackStart = null;
+let hackDurationSec = 10 * 60; // 10 minutes = 600 sec
+let hackTickerInterval = null;
+
+function startHack(){
+  if(hackInterval) return;
+  hackOverlay.style.display = 'flex';
+  hackFeed.textContent = '';
+  hackStart = Date.now();
+  let seed = 0;
+  // generate lots of numbers in stream
+  hackInterval = setInterval(()=>{
+    seed++;
+    const lines = [];
+    for(let i=0;i<6;i++){
+      const hex = Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0');
+      const num = Math.floor(Math.random()*1e12).toString().padStart(12,'0');
+      lines.push(`[${new Date().toLocaleTimeString()}] 0x${hex} ${num}`);
     }
+    hackFeed.textContent = (hackFeed.textContent + lines.join('\n') + '\n').slice(-3000);
+    hackFeed.scrollTop = hackFeed.scrollHeight;
+  }, 450);
 
-    document.getElementById('reportForm').reset(); renderRules(); updateTotalHours();
-  }catch(error){ console.error('Error submitting report:', error); alert('Failed to submit report: ' + error.message); }
-}
-
-// --- DYNAMIC ISLAND ROTATION (still rotates metrics every 5s) ---
-const metrics = ['hours','credits','points','sig'];
-let metricIndex = 0;
-const islandDisplay = document.getElementById('islandDisplay');
-function showMetric(index){ 
-  const items = islandDisplay.querySelectorAll('.island-metric');
-  items.forEach(it=> it.style.display = 'none');
-  const m = items[index % items.length]; if(m) m.style.display = 'flex';
-}
-showMetric(metricIndex);
-setInterval(()=>{ metricIndex = (metricIndex + 1) % metrics.length; showMetric(metricIndex); }, 1500);
-
-// === AUTO LOGIN ON PAGE LOAD & button wiring ===
-window.addEventListener('load', ()=>{
-  let saved = localStorage.getItem('loginData') || sessionStorage.getItem('loginData');
-  if(saved){ try{ const { username, password } = JSON.parse(saved); login(username, password, true, true); }catch(e){ console.error('Failed to parse saved login:', e); } }
-});
-
-// wire login button
-document.getElementById('loginBtn').addEventListener('click', async ()=>{
-  const u = document.getElementById('username').value;
-  const p = document.getElementById('password').value;
-  const keep = document.getElementById('keepSignedIn').checked;
-  if(!u||!p) return alert('Enter username and password');
-  if(keep) localStorage.setItem('loginData', JSON.stringify({ username: u, password: p })); else sessionStorage.setItem('loginData', JSON.stringify({ username: u, password: p }));
-  await login(u,p,keep,false);
-});
-
-// wire send credits/points buttons
-document.getElementById('sendBtn').addEventListener('click', ()=> sendCredits());
-document.getElementById('sendPointsBtn').addEventListener('click', ()=> sendPoints());
-
-// expose logout to window (in case needed elsewhere)
-window.logout = logout;
-
-</script>
-
-<!-- === SHORTS: modular Firebase v10 implementation (drop-in) === -->
-<style>
-  /* Shorts styles - self contained */
-  .bottom-dock { position: fixed; right: 14px; bottom: 18px; left: 14px; z-index: 100001; display:flex; justify-content:space-between; gap:8px; max-width:700px; margin: 0 auto; pointer-events: auto; }
-  .dock-btn { flex:1 1 0; padding: 12px; border-radius: 12px; background:#ffffff; color:#2b4c7e; border:1px solid #cfd8e3; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); cursor:pointer; }
-  .dock-btn.primary { background: #2b4c7e; color: white; }
-  .create-modal, .watch-modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 100002; background: rgba(0,0,0,0.6); padding: 20px; }
-  .create-modal.show, .watch-modal.show { display:flex; }
-  .modal-card { width: 100%; max-width: 760px; max-height: 90vh; overflow:auto; background: white; border-radius: 12px; padding: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
-  .modal-header { display:flex; align-items:center; justify-content:space-between; gap: 10px; }
-  .watch-scroll { display:flex; flex-direction:column; gap:12px; padding: 12px 0; }
-  .short-item { background:#111; color: #fff; border-radius:10px; overflow:hidden; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height: 300px; }
-  .short-media { width:100%; max-height:720px; object-fit:cover; display:block; background:black; }
-  .short-meta { padding: 10px; width:100%; display:flex; justify-content:space-between; align-items:center; gap:8px; box-sizing:border-box; }
-  .short-controls { display:flex; gap:8px; align-items:center; }
-  .short-controls button { background: rgba(255,255,255,0.08); border: none; color: white; padding: 8px 10px; border-radius: 8px; font-weight:700; cursor:pointer; }
-  .comments-panel { margin-top:8px; background: rgba(0,0,0,0.06); padding:8px; border-radius:8px; max-height:200px; overflow:auto; width:100%; box-sizing:border-box; color:#111; background:#fff; }
-  .comment-item { padding:6px 8px; border-bottom:1px solid rgba(0,0,0,0.06); }
-  .like-count { font-weight:700; margin-left:6px; color:inherit; }
-  @media(max-width:520px){ .short-item { min-height: 520px; } .dock-btn { padding: 14px; } }
-</style>
-
-<!-- bottom dock -->
-<div class="bottom-dock" aria-hidden="false">
-  <button id="dockHome" class="dock-btn">🏠 Home</button>
-  <button id="dockCreate" class="dock-btn">➕ Create</button>
-  <button id="dockWatch" class="dock-btn primary">▶ Watch</button>
-</div>
-
-<!-- Create modal -->
-<div id="createModal" class="create-modal" aria-hidden="true">
-  <div class="modal-card" role="dialog" aria-label="Create short">
-    <div class="modal-header">
-      <h3 style="margin:0">Create Video / Photo</h3>
-      <button id="closeCreate" class="dock-btn" style="flex:0 0 auto;background:#eee;color:#2b4c7e;border-radius:8px;padding:8px 10px;">Close</button>
-    </div>
-    <div style="margin-top:10px;">
-      <label>Title (required)</label>
-      <input id="shortTitle" placeholder="Short title" style="width:100%;box-sizing:border-box;padding:8px;margin-top:6px;" />
-      <label style="margin-top:6px;display:block;">Description (optional)</label>
-      <input id="shortDescription" placeholder="Description (optional)" style="width:100%;box-sizing:border-box;padding:8px;margin-top:6px;" />
-      <label style="margin-top:8px">Choose media (photo or video) (required)</label>
-      <input id="shortMedia" type="file" accept="image/*,video/*" style="display:block;margin-top:6px;" />
-      <div style="margin-top:10px; display:flex; gap:8px;">
-        <button id="postShort" class="dock-btn primary" style="flex:1;">Post</button>
-      </div>
-      <div id="createStatus" style="margin-top:8px; font-size:0.9rem;"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Watch modal -->
-<div id="watchModal" class="watch-modal" aria-hidden="true">
-  <div class="modal-card" role="dialog" aria-label="Watch shorts">
-    <div class="modal-header">
-      <h3 style="margin:0">Shorts</h3>
-      <div style="display:flex; gap:8px;">
-        <button id="closeWatch" class="dock-btn" style="flex:0 0 auto;background:#eee;color:#2b4c7e;border-radius:8px;padding:8px 10px;">Close</button>
-        <button id="refreshShorts" class="dock-btn" style="flex:0 0 auto;background:#fff;color:#2b4c7e;border-radius:8px;padding:8px 10px;">Refresh</button>
-      </div>
-    </div>
-
-    <div id="shortsContainer" style="margin-top:12px;">
-      <div id="shortsList" class="watch-scroll">Loading shorts...</div>
-    </div>
-  </div>
-</div>
-
-<script type="module">
-import { getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, push, set, onValue, get, child, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-// Use the already-initialized app
-let app;
-try { app = getApp(); } catch(e) { console.error('Firebase app not initialized for shorts:', e); throw e; }
-const dbMod = getDatabase(app);
-
-// helpers
-function _escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, function(m){ return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;" }[m]; }); }
-function _getLoggedUserFromStorage(){ try{ const raw = localStorage.getItem('loginData') || sessionStorage.getItem('loginData'); if(!raw) return null; const { username } = JSON.parse(raw); return username || null; }catch(e){ return null; } }
-
-// DOM refs
-const createModal = document.getElementById('createModal');
-const watchModal = document.getElementById('watchModal');
-const dockHome = document.getElementById('dockHome');
-const dockCreate = document.getElementById('dockCreate');
-const dockWatch = document.getElementById('dockWatch');
-const closeCreate = document.getElementById('closeCreate');
-const closeWatch = document.getElementById('closeWatch');
-const postShortBtn = document.getElementById('postShort');
-const shortMediaInput = document.getElementById('shortMedia');
-const shortTitleInput = document.getElementById('shortTitle');
-const shortDescInput = document.getElementById('shortDescription');
-const createStatus = document.getElementById('createStatus');
-const shortsListEl = document.getElementById('shortsList');
-const refreshShortsBtn = document.getElementById('refreshShorts');
-
-dockHome.addEventListener('click', ()=> location.reload());
-dockCreate.addEventListener('click', ()=> openCreateModal());
-dockWatch.addEventListener('click', ()=> openWatchModal());
-closeCreate.addEventListener('click', ()=> closeCreateModal());
-closeWatch.addEventListener('click', ()=> closeWatchModal());
-refreshShortsBtn.addEventListener('click', ()=> loadShorts(true));
-
-function openCreateModal(){ createModal.classList.add('show'); createModal.setAttribute('aria-hidden','false'); }
-function closeCreateModal(){ createModal.classList.remove('show'); createModal.setAttribute('aria-hidden','true'); shortTitleInput.value=''; shortDescInput.value=''; shortMediaInput.value=''; createStatus.innerText=''; }
-function openWatchModal(){ watchModal.classList.add('show'); watchModal.setAttribute('aria-hidden','false'); loadShorts(); }
-function closeWatchModal(){ watchModal.classList.remove('show'); watchModal.setAttribute('aria-hidden','true'); }
-
-// file -> dataURL
-function fileToDataURL(file){ return new Promise((resolve, reject) => { const r = new FileReader(); r.onload = ()=> resolve(r.result); r.onerror = e => reject(e); r.readAsDataURL(file); }); }
-function setCreateStatus(text, isError = false){ createStatus.textContent = text; createStatus.style.color = isError ? 'crimson' : 'green'; }
-
-// POST handling
-postShortBtn.addEventListener('click', async ()=>{
-  const user = (window.currentUser || _getLoggedUserFromStorage());
-  if(!user){ alert('Please login to post a short.'); return; }
-  const title = (shortTitleInput.value || '').trim();
-  const desc = (shortDescInput.value || '').trim();
-  const file = (shortMediaInput.files && shortMediaInput.files[0]) || null;
-  if(!title) return alert('Title is required.');
-  if(!file) return alert('Please choose an image or video file.');
-
-  setCreateStatus('Preparing upload...');
-  try{
-    if(file.size > 30 * 1024 * 1024){ if(!confirm('File size >30MB. Continue?')) { setCreateStatus('Upload cancelled'); return; } }
-    const dataUrl = await fileToDataURL(file);
-    const mediaType = file.type.startsWith('video/') ? 'video' : 'image';
-    const payload = { user, title, description: desc || '', mediaData: dataUrl, mediaType, timestamp: Date.now() };
-
-    const newRef = push(ref(dbMod, 'shorts'));
-    await set(newRef, payload);
-    setCreateStatus('Posted!');
-    shortTitleInput.value = ''; shortDescInput.value = ''; shortMediaInput.value = '';
-    loadShorts(true);
-    setTimeout(()=> setCreateStatus(''), 1800);
-  }catch(err){ console.error(err); setCreateStatus('Failed: ' + (err && err.message ? err.message : err)); }
-});
-
-// LOAD & RENDER
-let shortsListener = null;
-function loadShorts(force){
-  if(shortsListener){
-    try{ /* no-op */ }catch(e){}
-  }
-  onValue(ref(dbMod, 'shorts'), snap => {
-    const raw = snap.exists() ? snap.val() : {};
-    const arr = Object.entries(raw).map(([id,v]) => ({ id, ...(v||{}) }));
-    renderShorts(arr);
-  });
-}
-
-function renderShorts(items){
-  items.sort((a,b)=> (b.timestamp||0) - (a.timestamp||0));
-  if(items.length === 0){ shortsListEl.innerHTML = '<div style="padding:12px;">No shorts yet — post the first!</div>'; return; }
-  shortsListEl.innerHTML = '';
-  items.forEach(item => {
-    const wrap = document.createElement('div');
-    wrap.className = 'short-item';
-    let mediaEl;
-    if(item.mediaType === 'video'){
-      mediaEl = document.createElement('video');
-      mediaEl.setAttribute('playsinline','');
-      mediaEl.setAttribute('webkit-playsinline','');
-      mediaEl.muted = true;
-      mediaEl.controls = false;
-      mediaEl.loop = false;
-      mediaEl.className = 'short-media';
-      mediaEl.src = item.mediaData;
-    } else {
-      mediaEl = document.createElement('img');
-      mediaEl.className = 'short-media';
-      mediaEl.src = item.mediaData;
-      mediaEl.alt = item.title || '';
+  // timer
+  hackTickerInterval = setInterval(()=>{
+    const elapsed = Math.floor((Date.now() - hackStart)/1000);
+    const remain = hackDurationSec - elapsed;
+    if(remain <= 0){
+      stopHack(true);
+      return;
     }
-    wrap.appendChild(mediaEl);
+    const mm = String(Math.floor(remain/60)).padStart(2,'0');
+    const ss = String(remain%60).padStart(2,'0');
+    hackTimer.textContent = `${mm}:${ss} remaining`;
+  }, 700);
 
-    const meta = document.createElement('div'); meta.className = 'short-meta';
-    const left = document.createElement('div'); left.style.flex='1';
-    left.innerHTML = `<div style="font-weight:700">${_escapeHtml(item.user||'unknown')}</div>
-                      <div style="font-weight:700">${_escapeHtml(item.title||'')}</div>
-                      ${item.description?'<div style="font-size:0.9rem;opacity:0.9;">'+_escapeHtml(item.description)+'</div>':''}`;
-    meta.appendChild(left);
-
-    const right = document.createElement('div'); right.className='short-controls';
-    const likeBtn = document.createElement('button');
-    const likesObj = item.likes || {};
-    const likeCount = Object.keys(likesObj||{}).length;
-    likeBtn.innerHTML = `❤️ <span class="like-count">${likeCount}</span>`;
-    likeBtn.title = 'Like';
-    const logged = (window.currentUser || _getLoggedUserFromStorage());
-    if(logged && likesObj && likesObj[logged]) likeBtn.style.background = 'rgba(255,255,255,0.18)';
-    likeBtn.addEventListener('click', async ()=>{
-      const user = (window.currentUser || _getLoggedUserFromStorage());
-      if(!user){ alert('Login to like.'); return; }
-      const likeRef = ref(dbMod, `shorts/${item.id}/likes/${user}`);
-      try{
-        const s = await get(likeRef);
-        if(!s.exists()) await set(likeRef, true); else await remove(likeRef);
-      }catch(err){ console.error(err); alert('Failed to toggle like'); }
-    });
-    right.appendChild(likeBtn);
-
-    const commentBtn = document.createElement('button');
-    commentBtn.textContent = '💬'; commentBtn.title = 'Comments';
-    commentBtn.addEventListener('click', ()=> openCommentsPanel(item, wrap));
-    right.appendChild(commentBtn);
-
-    const timeSpan = document.createElement('div'); timeSpan.style.fontSize='0.8rem'; timeSpan.style.opacity='0.85';
-    timeSpan.textContent = new Date(item.timestamp||Date.now()).toLocaleString();
-    right.appendChild(timeSpan);
-
-    meta.appendChild(right);
-    wrap.appendChild(meta);
-
-    const commentsWrapper = document.createElement('div'); commentsWrapper.className = 'comments-panel'; commentsWrapper.style.display = 'none';
-    wrap.appendChild(commentsWrapper);
-
-    shortsListEl.appendChild(wrap);
-  });
-
-  // autoplay logic for videos
-  const videos = shortsListEl.querySelectorAll('video');
-  const io = new IntersectionObserver((entries)=>{
-    entries.forEach(en=>{
-      const v = en.target;
-      if(en.isIntersecting) { v.muted = true; v.play().catch(()=>{}); }
-      else v.pause();
-    });
-  }, { threshold: 0.6 });
-  videos.forEach(v => io.observe(v));
+  // safety: update initial timer immediately
+  hackTimer.textContent = `${String(Math.floor(hackDurationSec/60)).padStart(2,'0')}:${String(hackDurationSec%60).padStart(2,'0')} remaining`;
 }
 
-// comments panel UI + posting
-async function openCommentsPanel(item, shortDiv){
-  const commentsPanel = shortDiv.querySelector('.comments-panel');
-  commentsPanel.innerHTML = ''; commentsPanel.style.display = 'block';
-  const commentsSnap = await get(ref(dbMod, `shorts/${item.id}/comments`));
-  const comments = commentsSnap.exists() ? commentsSnap.val() : {};
-  const commentsArr = Object.entries(comments||{}).map(([id, v]) => ({ id, ...(v||{}) })).sort((a,b)=> (a.timestamp||0)-(b.timestamp||0));
-  commentsArr.forEach(c => {
-    const cd = document.createElement('div'); cd.className='comment-item';
-    cd.innerHTML = `<strong>${_escapeHtml(c.user||'unknown')}</strong> <div style="display:inline;margin-left:6px">${_escapeHtml(c.text||'')}</div>
-                    <div style="font-size:0.8rem;opacity:0.7">${new Date(c.timestamp||Date.now()).toLocaleString()}</div>`;
-    commentsPanel.appendChild(cd);
-  });
-  const form = document.createElement('div'); form.style.display='flex'; form.style.gap='8px'; form.style.marginTop='8px';
-  const input = document.createElement('input'); input.placeholder = 'Write a comment...'; input.style.flex='1';
-  const send = document.createElement('button'); send.textContent = 'Send'; send.className = 'dock-btn'; send.style.flex='0 0 100px';
-  send.addEventListener('click', async ()=>{
-    const user = (window.currentUser || _getLoggedUserFromStorage());
-    if(!user){ alert('Login to comment.'); return; }
-    const text = (input.value||'').trim();
-    if(!text) return;
-    const newRef = push(ref(dbMod, `shorts/${item.id}/comments`));
-    try{ await set(newRef, { user, text, timestamp: Date.now() }); input.value = ''; openCommentsPanel(item, shortDiv); }catch(err){ console.error(err); alert('Failed to post comment'); }
-  });
-  form.appendChild(input); form.appendChild(send);
-  commentsPanel.appendChild(form);
+function stopHack(finished=false){
+  if(hackInterval){ clearInterval(hackInterval); hackInterval = null; }
+  if(hackTickerInterval){ clearInterval(hackTickerInterval); hackTickerInterval = null; }
+  hackOverlay.style.display = 'none';
+  if(finished){
+    // the spec: hack runs 10 mins and shows numbers & minutes left; it should not unlock admin features.
+    flashNotice('Hack finished (simulation). Admin features remain locked.');
+  } else {
+    flashNotice('Hack aborted.');
+  }
 }
 
-// expose loadShorts to window
-window.loadShorts = loadShorts;
-
-</script>
-<!-- END SHORTS -->
-
-<script>
-document.getElementById("reportForm").addEventListener("submit", function(e) {
-    e.preventDefault(); // stop form refresh
-
-    const webhookURL = "https://discordapp.com/api/webhooks/1404606217346875483/XRsgBkh2jdg7NgOgH77wnmDB5sxtYwEHzMRMy-SDHeC1x-NX8n4y2pv1Y3mZvK92a9LL";
-    const reporter = document.getElementById("reporter").value.trim();
-    const reportedUser = document.getElementById("reportedUser").value.trim();
-   
-    // Get the total hours penalty from the correct element (which is a div)
-    const totalHoursText = document.getElementById("total-hours").textContent;
-    const totalHours = totalHoursText.match(/\d+/)[0] || "0";
-
-    // Create a list of the rules that were broken, including the penalty hours and quantity
-    const brokenRules = [];
-    document.querySelectorAll('.rule-item').forEach(item => {
-        const qty = parseInt(item.querySelector('input').value) || 0;
-        if (qty > 0) {
-            const title = item.querySelector('strong').textContent;
-            const hoursPer = parseInt(item.dataset.hours);
-            brokenRules.push(`- ${title} (x${qty}) for ${qty * hoursPer} hours`);
-        }
-    });
-    const rulesList = brokenRules.join('\n') || "No rules specified.";
-
-    // Map reported users to Discord mentions
-    const mentionMap = {
-        "layan": "<@1367185737446985738>", // Replace with actual user IDs
-        "zezo": "<@1388958062500647064>", // Replace with actual user IDs
-        "asser": "<@1367187821542117558>" // Replace with actual user IDs
-    };
-
-    const mention = mentionMap[reportedUser.toLowerCase()] || "";
-
-    const message = `📢 **New Report Submitted**\n`
-                  + `**Reporter:** ${reporter}\n`
-                  + `**Reported User:** ${reportedUser} ${mention}\n`
-                  + `**Broken Rules:**\n${rulesList}\n`
-                  + `**Total Hours:** ${totalHours}`;
-
-    fetch(webhookURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: message })
-    })
-    .then(res => {
-        if (res.ok) {
-            alert("Report sent successfully!");
-        } else {
-            alert("Failed to send report.");
-        }
-    })
-    .catch(err => {
-        console.error(err);
-        alert("Error sending report.");
-    });
+hackBtn.addEventListener('click', ()=>{
+  startHack();
 });
-document.getElementById('menuLogoutBtn').addEventListener('click', () => {
-  logout();
+stopHackBtn.addEventListener('click', ()=> stopHack(false));
+
+/* ---------- keyboard shortcuts (fun) ---------- */
+document.addEventListener('keydown', (e)=>{
+  if(e.ctrlKey && e.key === 'u'){
+    // quick unlock (shows prompt)
+    const code = prompt('Enter admin code:');
+    if(code === '555'){ setAdminUnlocked(true); flashNotice('Unlocked via shortcut'); }
+    else flashNotice('Wrong code');
+  }
 });
+
+/* ---------- small safety: prevent accidental clearing ---------- */
+/* Provide a button to reset sample data (commented out) — left for debugging */
+/*
+function resetToSample(){
+  state.parts = sample;
+  saveState();
+  renderBoard();
+}
+*/
+
+/* ---------- end of file ---------- */
 </script>
-<style>
-  @keyframes disco {
-    0% {color: red;}
-    16% {color: orange;}
-    33% {color: yellow;}
-    50% {color: green;}
-    66% {color: blue;}
-    83% {color: purple;}
-    100% {color: red;}
-  }
-  .disco {
-    animation: disco 2s infinite;
-  }
-  .gold {
-    background: linear-gradient(90deg, #ffd700, #ffae00, #ffd700);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: bold;
-  }
-</style>
-
-<div id="messageContainer" 
-     style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-            display:flex;flex-direction:column;align-items:center;gap:10px;
-            z-index:9999;max-width:80%;"></div>
-
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAjeXycCBhYoAU-0iiC4LbSTylKrrThN8Y",
-    authDomain: "sharplabubu.firebaseapp.com",
-    databaseURL: "https://sharplabubu-default-rtdb.firebaseio.com",
-    projectId: "sharplabubu",
-    storageBucket: "sharplabubu.firebasestorage.app",
-    messagingSenderId: "596148393481",
-    appId: "1:596148393481:web:4f822d86c44a13bd810ad8",
-    measurementId: "G-4M25R3BF08"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  // load seen messages from localStorage
-  const seen = new Set(JSON.parse(localStorage.getItem("seenMsgs") || "[]"));
-  const container = document.getElementById("messageContainer");
-
-  db.ref("messages").on("child_added", snap => {
-    const data = snap.val();
-    const msgId = snap.key;
-
-    // Skip if already seen
-    if(seen.has(msgId)) return;
-    seen.add(msgId);
-    localStorage.setItem("seenMsgs", JSON.stringify(Array.from(seen)));
-
-    const box = document.createElement("div");
-    box.style.background = "black";
-    box.style.padding = "12px";
-    box.style.borderRadius = "10px";
-    box.style.wordWrap = "break-word";
-    box.style.textAlign = "center";
-    box.style.maxWidth = "100%";
-
-    let content = `<strong>${data.name}</strong>`;
-    if(data.withImage) content += ` <img src="roblox.png" alt="icon" style="height:20px;vertical-align:middle;">`;
-    content += `: ${data.message}`;
-    box.innerHTML = content;
-
-    // Apply colors
-    if (data.color === "disco") {
-      box.classList.add("disco");
-    } else if (data.color === "gold") {
-      box.classList.add("gold");
-    } else {
-      box.style.color = data.color || "white";
-    }
-
-    container.appendChild(box);
-
-    setTimeout(()=> {
-      box.remove();
-    }, (data.duration || 5) * 1000);
-  });
-</script>
-
 </body>
 </html>
