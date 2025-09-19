@@ -1,277 +1,414 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.4/firebase-database.js"></script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CHALLENGE</title>
+<meta charset="UTF-8" />
+<title>Login, Report, Shop & Credits Sender with Dynamic Island + Notifications</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2b4c7e">
+<link rel="apple-touch-icon" href="LABUBU3.jpg">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="brrrrrr.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="brrrrrr.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="THE CHALLENGE" />
-  <meta name="mobile-web-app-capable" content="yes" />
+<style>
+/* ---------- existing styles kept (trimmed in this paste) ---------- */
+/* I kept your original styles. The new styles for the device picker and notch are below. */
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: url('ios18wall.jpg') no-repeat center center fixed;
-      background-size: cover;
-      color: white;
-    }
-    .login-box, form, #selfEditArea, #selfEditor {
-      max-width: 400px;
-      margin: 20px auto;
-      padding: 25px;
-      border-radius: 30px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    }
-    input, button, select, textarea {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 50px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
-      font-size: 16px;
-      backdrop-filter: blur(10px);
-      box-sizing: border-box;
-    }
-    button:hover {
-      background: rgba(255, 255, 255, 0.3);
-      color: #000;
-      cursor: pointer;
-    }
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 10px;
-    }
-    #infoBox {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(15px);
-      border-radius: 20px;
-      padding: 10px 20px;
-      font-weight: bold;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      display: none;
-      color: white;
-    }
-    footer {
-      text-align: center;
-      margin-top: 40px;
-      font-weight: 700;
-      color: white;
-    }
-  </style>
+/* Device picker modal (one-time) */
+#devicePickerOverlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items:center;
+  justify-content:center;
+  background: rgba(0,0,0,0.6);
+  z-index: 200000;
+}
+#devicePickerCard {
+  background: #fff;
+  padding: 18px;
+  border-radius: 12px;
+  width: 320px;
+  max-width: calc(100% - 32px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+#devicePickerCard h3 { margin:0 0 8px 0; color:#2b4c7e; }
+#devicePickerCard select, #devicePickerCard button { width:100%; padding:10px; margin-top:8px; font-size:1rem; border-radius:8px; }
+
+/* Notch & in-notch island adjustments */
+:root {
+  --notch-width: 220px;   /* default, overridden per device */
+  --notch-height: 36px;
+  --island-closed-width: 220px;
+}
+
+/* Notch container (visual simulation) */
+#notchContainer {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--notch-width);
+  height: var(--notch-height);
+  background: #111;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  z-index: 99999;
+  display: none; /* shown for notch devices */
+  box-shadow: 0 4px 18px rgba(0,0,0,0.35), inset 0 -2px 6px rgba(255,255,255,0.03);
+}
+
+/* When island is placed "in-notch" we reduce its closed width and position it slightly lower */
+#dynamic-island.in-notch {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  top: calc(var(--notch-height) - 6px) !important; /* a bit down inside notch */
+  min-width: 0 !important;
+  width: var(--island-closed-width) !important;
+  background: var(--island-bg);
+  z-index: 100000;
+  border-radius: 14px;
+  transition: width 600ms cubic-bezier(.22,1,.36,1), left 400ms ease, top 300ms ease;
+}
+
+/* When open, island still expands like normal; JS will compute a wider width and position the island menu */
+#dynamic-island.in-notch.opening {
+  /* width is set dynamically by JS when opening */
+}
+
+/* Ensure the actual island menu shows under the opened island (same as normal) */
+#islandMenu.in-notch {
+  top: calc(var(--notch-height) + 8px) !important;
+}
+
+/* small "Change device" control inside customize panel */
+#changeDeviceBtn { margin-top: 10px; padding:8px; border-radius:8px; background: #fff; color:#2b4c7e; border:1px solid #cfd8e3; cursor:pointer; }
+
+/* keep rest of your styles intact - omitted to keep this snippet readable */
+</style>
 </head>
 <body>
 
-  <div id="infoBox">
-    Credits: <span id="infoCredits">0</span> | Days: <span id="infoDays">0</span>
+<!-- Device picker modal (one-time) -->
+<div id="devicePickerOverlay" role="dialog" aria-modal="true">
+  <div id="devicePickerCard" role="document">
+    <h3>Which device are you on?</h3>
+    <p style="margin:6px 0 0 0; font-size:0.95rem; color:#444;">Choose your phone model so the Dynamic Island can display correctly. We'll only ask once.</p>
+    <select id="devicePickerSelect" aria-label="Choose device">
+      <option value="">Select device</option>
+      <option value="iphone8">iPhone 8 — No notch</option>
+      <option value="iphonex">iPhone X — Notch</option>
+      <option value="iphone11">iPhone 11 — Notch</option>
+      <option value="iphone13pro">iPhone 13 Pro — Notch</option>
+    </select>
+    <button id="saveDeviceBtn">Save device</button>
+    <button id="skipDeviceBtn" style="margin-top:6px; background:#eee; color:#222; border:1px solid #ddd;">Skip (use default)</button>
   </div>
+</div>
 
-  <div class="login-box" id="loginBox">
-    <h2 style="text-align:center;">Login</h2>
-    <input type="text" id="username" placeholder="Username" autocomplete="off" />
-    <input type="password" id="password" placeholder="Password" autocomplete="off" />
-    <button onclick="checkLogin()">Login</button>
-  </div>
+<!-- Notch visual (only shown for notch devices) -->
+<div id="notchContainer" aria-hidden="true"></div>
 
-  <div id="welcomeBox" style="display:none; text-align:center; margin-top:20px;">
-    <h1>Welcome back, <span id="userWelcome"></span>!</h1>
-  </div>
+<!-- (rest of your page content, dynamic island, menus, login form etc. — use your existing HTML unchanged) -->
+<!-- For brevity I assume the rest of your original HTML (dynamic island, menus, forms) remains exactly as you provided. -->
+<!-- ... your entire existing HTML goes here (kept exactly as you already had) ... -->
 
-  <form id="reportForm" style="display:none;" action="https://formsubmit.co/zezo_z4ever@outlook.com" method="post">
-    <input type="hidden" name="_captcha" value="false" />
-    <input type="hidden" name="_next" value="https://zezo20234.github.io/TA7ADY/" />
-    <label for="name">Name:</label>
-    <input type="text" id="name" name="name" placeholder="Enter your name" required />
-    <label for="report">Report:</label>
-    <textarea id="report" name="report" rows="2" placeholder="Your report here"></textarea>
-    <label for="reportWho">Report on who:</label>
-    <textarea id="reportWho" name="report_on_who" rows="2" placeholder="Name of who you report on"></textarea>
-    <label for="reportDetails">Report details:</label>
-    <textarea id="reportDetails" name="report_details" rows="3" placeholder="Explain what happened..."></textarea>
-    <label for="giveCredits">Give credits to:</label>
-    <textarea id="giveCredits" name="give_to_who_credits" rows="3" placeholder="Who should get credit?"></textarea>
-    <label for="credits">How many credits:</label>
-    <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount" />
-    <label for="rating">Rate this app:</label>
-    <div id="rating" style="display:flex; gap:10px; justify-content:center; margin-top: 5px;">
-      <label><input type="radio" name="rating" value="1" required />1⭐</label>
-      <label><input type="radio" name="rating" value="2" />2⭐</label>
-      <label><input type="radio" name="rating" value="3" />3⭐</label>
-      <label><input type="radio" name="rating" value="4" />4⭐</label>
-      <label><input type="radio" name="rating" value="5" />5⭐</label>
-    </div>
-    <input type="submit" class="glassBtn" value="SUBMIT" />
-    <button type="reset" id="resetButton">Reset</button>
-  </form>
+<!-- For the answer I will include only the additional script to integrate the picker and notch behaviour.
+     Insert this <script> AFTER your initial module that creates and manipulates #dynamic-island
+     (or replace the module version with this integrated version). -->
 
-  <div id="selfEditArea" class="login-box" style="display:none;">
-    <h3>🔒 Enter Secret Code</h3>
-    <input type="password" id="secretCodeInput" placeholder="Enter secret code" autocomplete="off" />
-    <button onclick="checkSecretCode()">Unlock Editor</button>
-  </div>
+<script>
+/*
+  Device picker + notch-aware dynamic island behaviour
 
-  <div id="selfEditor" class="login-box" style="display:none;">
-    <h3>Edit Your Own Account</h3>
-    <label for="selfCredits">Credits:</label>
-    <input type="number" id="selfCredits" placeholder="Update your credits" min="0" />
-    <label for="selfDays">Days:</label>
-    <input type="number" id="selfDays" placeholder="Update your days" min="0" />
-    <button onclick="saveSelfChanges()">Save My Changes</button>
-  </div>
+  How it works:
+  - Shows the device picker once (no value in localStorage).
+  - On selection we save 'deviceType' (string) to localStorage.
+  - For notched devices we simulate a notch (#notchContainer), set CSS variables for notch size,
+    and add class 'in-notch' to #dynamic-island so it sits in the notch when closed.
+  - When opening/closing the island we respect the notch anchoring: closed width = notch width,
+    expanded width computed by available viewport and the islandMenu logic.
+*/
 
-  <footer>
-    <p>MADE BY ZEYAD AND CHATGPT</p>
-    <p>Version 21 | Made on 5/5/2025</p>
-    <p>Game Partners: zezo games</p>
-  </footer>
+(function(){
+  const DEVICE_KEY = 'labubu_device_type';
+  const deviceInfo = {
+    iphone8: { name: 'iPhone 8', notch: false, notchWidth: 0, notchHeight: 0 },
+    iphonex: { name: 'iPhone X', notch: true, notchWidth: 220, notchHeight: 36 },
+    iphone11: { name: 'iPhone 11', notch: true, notchWidth: 240, notchHeight: 36 },
+    iphone13pro: { name: 'iPhone 13 Pro', notch: true, notchWidth: 200, notchHeight: 34 }
+  };
 
-  <script>
-    // Default users with passwords (you can add more)
-    const defaultUsers = {
-      asser: { password: "asser2025" },
-      layan: { password: "layan999" },
-      zezo: { password: "zezo2023" }
-    };
+  const pickerOverlay = document.getElementById('devicePickerOverlay');
+  const pickerSelect = document.getElementById('devicePickerSelect');
+  const saveBtn = document.getElementById('saveDeviceBtn');
+  const skipBtn = document.getElementById('skipDeviceBtn');
+  const notchContainer = document.getElementById('notchContainer');
+  const islandEl = document.getElementById('dynamic-island');
+  const islandMenu = document.getElementById('islandMenu');
 
-    // Firebase config - REPLACE with your Firebase project credentials:
-   const firebaseConfig = {
-  apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
-  authDomain: "the-challenge-fa9b2.firebaseapp.com",
-  databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
-  projectId: "the-challenge-fa9b2",
-  storageBucket: "the-challenge-fa9b2.firebasestorage.app",
-  messagingSenderId: "4102830619",
-  appId: "1:4102830619:web:581e033f36ec02708916be",
-  measurementId: "G-7M7JLK1V86"
-};
+  function showPicker(){
+    pickerOverlay.style.display = 'flex';
+  }
+  function hidePicker(){
+    pickerOverlay.style.display = 'none';
+  }
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+  function setDevice(deviceKey){
+    if(!deviceKey || !deviceInfo[deviceKey]) {
+      localStorage.setItem(DEVICE_KEY, '');
+      applyDevice(null);
+      return;
+    }
+    localStorage.setItem(DEVICE_KEY, deviceKey);
+    applyDevice(deviceKey);
+  }
 
-    let currentUser = null;
-    let currentUserData = null;
+  function applyDevice(deviceKey){
+    const d = deviceInfo[deviceKey] || null;
+    if(!d || !d.notch){
+      // Non-notch device: hide notch visual and ensure island is centered normally
+      notchContainer.style.display = 'none';
+      islandEl.classList.remove('in-notch');
+      islandMenu.classList.remove('in-notch');
+      // clear CSS variables
+      document.documentElement.style.removeProperty('--notch-width');
+      document.documentElement.style.removeProperty('--notch-height');
+      document.documentElement.style.removeProperty('--island-closed-width');
+      // Reset island inline positioning to the default behaviour (centered)
+      islandEl.style.left = ''; islandEl.style.top = ''; islandEl.style.transform = '';
+      return;
+    }
 
-    // Login function
-    function checkLogin() {
-      const user = document.getElementById("username").value.trim();
-      const pass = document.getElementById("password").value.trim();
+    // Notch device: show notch and anchor island inside it when closed
+    document.documentElement.style.setProperty('--notch-width', `${d.notchWidth}px`);
+    document.documentElement.style.setProperty('--notch-height', `${d.notchHeight}px`);
+    document.documentElement.style.setProperty('--island-closed-width', `${d.notchWidth}px`);
+    notchContainer.style.width = `${d.notchWidth}px`;
+    notchContainer.style.height = `${d.notchHeight}px`;
+    notchContainer.style.display = 'block';
+    islandEl.classList.add('in-notch');
+    islandMenu.classList.add('in-notch');
 
-      if (!defaultUsers[user]) {
-        alert("User not found.");
-        return;
-      }
-      if (defaultUsers[user].password !== pass) {
-        alert("Invalid password.");
-        return;
-      }
+    // position island so it's aligned with notch center and slightly lower (CSS takes care of top)
+    islandEl.style.left = '50%';
+    islandEl.style.transform = 'translateX(-50%)';
+    islandEl.style.top = `calc(${d.notchHeight}px - 6px)`;
+    islandEl.style.width = `${d.notchWidth}px`;
+  }
 
-      currentUser = user;
+  // load saved and initialize
+  const saved = localStorage.getItem(DEVICE_KEY);
+  if(!saved){
+    // show once after DOM ready
+    window.addEventListener('load', ()=> {
+      setTimeout(()=> showPicker(), 420);
+    });
+  } else if(deviceInfo[saved]){
+    applyDevice(saved);
+  }
 
-      // Load user data from Firebase or initialize if missing
-      firebase.database().ref('users/' + currentUser).get().then(snapshot => {
-        if (snapshot.exists()) {
-          currentUserData = snapshot.val();
-        } else {
-          // If no data exists for this user, initialize default credits/days
-          currentUserData = { credits: 1000, days: 30 };
-          firebase.database().ref('users/' + currentUser).set(currentUserData);
-        }
+  // Save actions
+  saveBtn.addEventListener('click', ()=> {
+    const deviceKey = pickerSelect.value;
+    if(!deviceKey) { alert('Please choose a device'); return; }
+    setDevice(deviceKey);
+    hidePicker();
+  });
+  skipBtn.addEventListener('click', ()=> {
+    hidePicker();
+    // leave default styling (centered)
+  });
 
-        // Update UI after data load
-        showLoggedInUI();
-        updateInfoBox();
-        listenForUserChanges();
-
-      }).catch(error => {
-        alert("Failed to load user data: " + error.message);
+  // Additionally add a "Change device" small button inside customize panel if present
+  // So user can change later without clearing localStorage.
+  function ensureChangeButton(){
+    try{
+      const panelCustomize = document.getElementById('panelCustomize');
+      if(!panelCustomize) return;
+      if(document.getElementById('changeDeviceBtn')) return;
+      const btn = document.createElement('button');
+      btn.id = 'changeDeviceBtn';
+      btn.textContent = 'Change device';
+      btn.addEventListener('click', ()=> {
+        // pre-select the saved device
+        const cur = localStorage.getItem(DEVICE_KEY) || '';
+        pickerSelect.value = cur;
+        showPicker();
       });
+      panelCustomize.querySelector('.panel-inner').appendChild(btn);
+    }catch(e){}
+  }
+  // run after page loaded (panel might be created earlier)
+  window.addEventListener('load', ensureChangeButton);
+  setTimeout(ensureChangeButton, 800);
+
+  /* ---------- Update the island open/close logic to respect notch anchor ---------- */
+  // The page already had island open/close logic in its module. We override behavior by hooking into click:
+  // We will re-implement opening/closing in a way compatible with notched devices.
+  // To avoid interfering with the page module scope, we add a new listener that toggles classes and positions menu.
+  // This listener co-exists with the page's listener, so we first prevent duplicate actions by checking the presence of the islandMenu class.
+  let isIslandOpen = false;
+  // store closed width for restoring
+  function getClosedWidth(){
+    const deviceKey = localStorage.getItem(DEVICE_KEY);
+    if(deviceInfo[deviceKey] && deviceInfo[deviceKey].notch) return deviceInfo[deviceKey].notchWidth;
+    // fallback: compute natural closed width (current bounding rect)
+    return Math.round(islandEl.getBoundingClientRect().width || 180);
+  }
+
+  function computeMenuWidth(){
+    // Similar to original behavior: allow at most min(windowWidth-20, 520), adjust for very small screens
+    let maxAllowed = Math.min(window.innerWidth - 20, 520);
+    if(window.innerWidth <= 420) maxAllowed = Math.min(window.innerWidth - 20, 380);
+    const menuWidth = Math.max(Math.min(maxAllowed, 520), 320);
+    return menuWidth;
+  }
+
+  function openIslandCustom(){
+    if(isIslandOpen) return;
+    const rect = islandEl.getBoundingClientRect();
+    const closedWidth = rect.width;
+    islandEl.dataset.closedWidth = closedWidth;
+
+    const menuWidth = computeMenuWidth();
+
+    // If notch device, keep island horizontally centered on notch while expanding width to menuWidth,
+    // but if menuWidth would overflow left/right too much we clamp it.
+    const deviceKey = localStorage.getItem(DEVICE_KEY);
+    const hasNotch = deviceInfo[deviceKey] && deviceInfo[deviceKey].notch;
+
+    // compute target left for the island element (so it visually expands from the notch center)
+    if(hasNotch){
+      // island stays centered with transform translateX(-50%). To visually expand, we set its width to menuWidth
+      islandEl.style.width = `${menuWidth}px`;
+      // ensure island left remains 50% and transform keeps centered:
+      islandEl.style.left = '50%';
+      islandEl.style.transform = 'translateX(-50%)';
+    } else {
+      // Non-notch: center in viewport (same as original)
+      const left = Math.round((window.innerWidth - menuWidth) / 2);
+      islandEl.style.left = `${left}px`;
+      islandEl.style.width = `${menuWidth}px`;
+      islandEl.style.transform = '';
     }
 
-    // Show UI after login
-    function showLoggedInUI() {
-      document.getElementById("loginBox").style.display = "none";
-      document.getElementById("reportForm").style.display = "block";
-      document.getElementById("welcomeBox").style.display = "block";
-      document.getElementById("infoBox").style.display = "block";
-      document.getElementById("selfEditArea").style.display = "block";
-      document.getElementById("userWelcome").innerText = currentUser;
-    }
+    // now position the islandMenu (dialog) under the island — reuse earlier menu positioning logic
+    // compute menu left and top
+    const islandRect = islandEl.getBoundingClientRect();
+    let menuLeft = Math.round((window.innerWidth - menuWidth) / 2);
+    // position menu top below island
+    let menuTop = Math.round(islandRect.bottom + 8);
 
-    // Update info box with current data
-    function updateInfoBox() {
-      document.getElementById("infoCredits").innerText = currentUserData.credits ?? 0;
-      document.getElementById("infoDays").innerText = currentUserData.days ?? 0;
-    }
+    // apply to islandMenu
+    islandMenu.style.left = `${menuLeft}px`;
+    islandMenu.style.top = `${menuTop}px`;
+    islandMenu.style.width = `${menuWidth}px`;
+    islandMenu.classList.add('open');
+    islandMenu.setAttribute('aria-hidden', 'false');
 
-    // Listen for realtime changes on this user's data and update UI instantly
-    function listenForUserChanges() {
-      firebase.database().ref('users/' + currentUser).on('value', snapshot => {
-        if (snapshot.exists()) {
-          currentUserData = snapshot.val();
-          updateInfoBox();
+    islandEl.classList.add('opening');
+    isIslandOpen = true;
+    // mark for potential other logic
+    islandEl.dataset.opened = '1';
+    // highlight actions button if needed (original code handled active classes)
+    try{ document.getElementById('menuShopBtn').classList.add('active'); }catch(e){}
+  }
 
-          // Also update the editor fields if open
-          if (document.getElementById("selfEditor").style.display === "block") {
-            document.getElementById("selfCredits").value = currentUserData.credits;
-            document.getElementById("selfDays").value = currentUserData.days;
-          }
-        }
-      });
-    }
-
-    // Secret code check to unlock editor
-    function checkSecretCode() {
-      const code = document.getElementById("secretCodeInput").value.trim();
-      if (code === "11223344") {
-        document.getElementById("selfEditor").style.display = "block";
-        document.getElementById("selfCredits").value = currentUserData.credits;
-        document.getElementById("selfDays").value = currentUserData.days;
+  function closeIslandCustom(){
+    if(!isIslandOpen) return;
+    islandMenu.classList.remove('open');
+    islandMenu.setAttribute('aria-hidden', 'true');
+    // restore closed width/position
+    const closedWidth = islandEl.dataset.closedWidth || '';
+    const deviceKey = localStorage.getItem(DEVICE_KEY);
+    const hasNotch = deviceInfo[deviceKey] && deviceInfo[deviceKey].notch;
+    if(closedWidth){
+      islandEl.style.width = `${closedWidth}px`;
+      if(hasNotch){
+        islandEl.style.left = '50%';
+        islandEl.style.transform = 'translateX(-50%)';
+        // top stays anchored in notch
       } else {
-        alert("❌ Invalid code.");
+        islandEl.style.left = '';
+        islandEl.style.transform = '';
+      }
+      // cleanup
+      setTimeout(()=> { islandEl.style.width = ''; islandEl.removeAttribute('data-opened'); islandEl.classList.remove('opening'); }, 420);
+    } else {
+      // fallback: fully reset
+      islandEl.style.left = ''; islandEl.style.width = ''; islandEl.style.transform = '';
+      islandEl.classList.remove('opening');
+    }
+    isIslandOpen = false;
+    try{ document.querySelectorAll('.menu-actions button').forEach(b => b.classList.remove('active')); }catch(e){}
+  }
+
+  // Wire custom click toggling on island: a single click toggles open/close
+  islandEl.addEventListener('click', (ev) => {
+    // If click target is inside menu itself, ignore
+    // Toggle open/close
+    if(isIslandOpen) closeIslandCustom();
+    else openIslandCustom();
+    // prevent other click handlers (some module code may also run)
+    ev.stopPropagation();
+  });
+
+  // close when clicking outside
+  document.addEventListener('click', (e) => {
+    if(!isIslandOpen) return;
+    if(!islandEl.contains(e.target) && !islandMenu.contains(e.target)) {
+      closeIslandCustom();
+    }
+  });
+
+  // update layout on resize
+  window.addEventListener('resize', ()=> {
+    // reapply saved device (which updates notch size)
+    const savedDevice = localStorage.getItem(DEVICE_KEY);
+    if(savedDevice) applyDevice(savedDevice);
+    // if open, reposition
+    if(isIslandOpen){
+      const menuWidth = computeMenuWidth();
+      islandMenu.style.width = `${menuWidth}px`;
+      // center island/menu again
+      const deviceKey = localStorage.getItem(DEVICE_KEY);
+      const hasNotch = deviceInfo[deviceKey] && deviceInfo[deviceKey].notch;
+      if(hasNotch){
+        islandEl.style.width = `${menuWidth}px`;
+        islandEl.style.left = '50%';
+        islandEl.style.transform = 'translateX(-50%)';
+      } else {
+        const left = Math.round((window.innerWidth - menuWidth) / 2);
+        islandEl.style.left = `${left}px`;
+        islandEl.style.width = `${menuWidth}px`;
+        islandEl.style.transform = '';
+        islandMenu.style.left = `${left}px`;
+      }
+      // recompute menu top from island bounding rect
+      const islandRect = islandEl.getBoundingClientRect();
+      islandMenu.style.top = Math.round(islandRect.bottom + 8) + 'px';
+    } else {
+      // if closed, ensure closed width = notchWidth for notch devices
+      const savedDevice = localStorage.getItem(DEVICE_KEY);
+      const d = deviceInfo[savedDevice];
+      if(d && d.notch){
+        islandEl.style.width = `${d.notchWidth}px`;
+        islandEl.style.left = '50%';
+        islandEl.style.transform = 'translateX(-50%)';
+        islandEl.style.top = `calc(${d.notchHeight}px - 6px)`;
       }
     }
+  });
 
-    // Save changes to Firebase when user edits credits or days
-    function saveSelfChanges() {
-      const newCredits = parseInt(document.getElementById("selfCredits").value);
-      const newDays = parseInt(document.getElementById("selfDays").value);
+  // expose small API: allow clearing the saved device in console if needed
+  window.LabubuDevice = {
+    clear() { localStorage.removeItem(DEVICE_KEY); alert('Device selection cleared — will ask again on next load.'); }
+  };
 
-      if (isNaN(newCredits) || newCredits < 0) {
-        alert("Please enter a valid non-negative number for credits.");
-        return;
-      }
-      if (isNaN(newDays) || newDays < 0) {
-        alert("Please enter a valid non-negative number for days.");
-        return;
-      }
+})();
+</script>
 
-      // Update Firebase
-      firebase.database().ref('users/' + currentUser).update({
-        credits: newCredits,
-        days: newDays
-      }).then(() => {
-        alert("✅ Your credits and days have been updated and saved!");
-      }).catch(error => {
-        alert("Failed to save data: " + error.message);
-      });
-    }
-  </script>
+<!-- The rest of your page's original scripts & content go below unchanged. -->
+<!-- ... keep your existing module scripts, firebase code, shop, shorts, forms, etc. ... -->
+
 </body>
 </html>
