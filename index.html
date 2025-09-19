@@ -64,11 +64,13 @@ img[src$="EGP.png"], .coin-icon, .island-icon {
 #dynamic-island {
   position: fixed;
   left: 50%;
-  /* safe-area aware: respects notches / dynamic island on iPhones.
-     fallback to 6px if env() isn't supported, then add 2px extra lift. */
-  top: calc(env(safe-area-inset-top, 6px) + 2px);
-  /* older iOS support */
-  top: calc(constant(safe-area-inset-top) + 2px);
+  /* place under iPhone 11 notch:
+     - use env(safe-area-inset-top) when supported,
+     - fallback to 44px (typical iPhone 11 notch height),
+     - add +6px gap so it's comfortably below the notch. */
+  top: calc(env(safe-area-inset-top, 44px) + 6px);
+  /* older WebKit constant() fallback */
+  top: calc(constant(safe-area-inset-top, 44px) + 6px);
   transform: translateX(-50%);
   z-index: 99999;
   display: flex;
