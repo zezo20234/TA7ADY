@@ -3,468 +3,587 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>HackerBoard — Updates / Trello-like</title>
+<title>Calendar (Admin / Hack demo)</title>
 <style>
   :root{
-    --bg:#07100a;
-    --panel:#021006;
-    --accent:#00ff6a;
-    --muted:#0b3a26;
-    --card:#082215;
-    --danger:#ff4d4d;
-    --glass: rgba(255,255,255,0.02);
-    --glass-2: rgba(0,0,0,0.3);
+    --bg:#0b0b0b;
+    --panel:#0f1720;
+    --muted:#9aa4b2;
+    --accent:#06b6d4;
+    --success:#22c55e;
+    --danger:#ef4444;
+    --white:#fff;
   }
-  html,body{height:100%;margin:0;font-family: "Courier New", Courier, monospace;background:linear-gradient(90deg,#001200 0%, #002200 50%, #001200 100%); color:var(--accent); -webkit-font-smoothing:antialiased;}
-  /* matrix background lines */
-  body::before{
-    content:"";
-    position:fixed; inset:0; pointer-events:none;
-    background-image: linear-gradient(transparent 92%, rgba(0,255,110,0.02) 92%),
-                      linear-gradient(90deg, transparent 93%, rgba(0,255,110,0.02) 93%);
-    background-size: 100% 32px, 32px 100%;
-    mix-blend-mode: overlay;
-  }
-  .app {
-    padding:14px;
-    box-sizing:border-box;
-    height:100%;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-  }
-  .topbar{
-    display:flex; gap:12px; align-items:center;
-  }
-  .logo{
-    font-weight:800; font-size:18px; color:var(--accent); letter-spacing:1px;
-    background: linear-gradient(90deg, rgba(0,255,110,0.12), rgba(0,255,110,0.02));
-    padding:8px 12px; border-radius:6px; box-shadow:0 4px 12px rgba(0,255,110,0.03);
-  }
-  .controls { display:flex; gap:8px; align-items:center; margin-left:auto; }
-  input.code {
-    background:transparent; border:1px solid rgba(0,255,110,0.12); color:var(--accent);
-    padding:6px 8px; border-radius:6px; width:80px; text-align:center;
-  }
-  button.btn {
-    background:linear-gradient(180deg, rgba(0,255,110,0.06), rgba(0,255,110,0.02));
-    color:var(--accent); border:1px solid rgba(0,255,110,0.15); padding:8px 12px; border-radius:6px;
-    cursor:pointer; font-weight:700;
-  }
-  button.btn:disabled{opacity:0.45; cursor:not-allowed;}
-  .status-pill { padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; }
-  .board {
-    display:flex;
-    gap:12px;
-    align-items:flex-start;
-    overflow:auto;
-    padding:8px;
-  }
-  .part {
-    min-width:260px;
-    background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.45));
-    border-radius:10px; padding:10px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); border:1px solid rgba(0,255,110,0.04);
-  }
-  .part-header { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
-  .part-title { font-weight:800; font-size:14px; }
-  .part-actions { margin-left:auto; display:flex; gap:6px; }
-  .part-admin { font-size:11px; color:#00ff6a; opacity:0.85; background:rgba(0,0,0,0.2); padding:4px 6px; border-radius:6px; }
-  .cards { display:flex; flex-direction:column; gap:8px; }
-  .card {
-    background: linear-gradient(180deg, rgba(0,255,110,0.02), rgba(0,255,110,0.006));
-    border:1px solid rgba(0,255,110,0.06); padding:10px; border-radius:8px;
-    color:#bfffd6;
-  }
-  .card .title { font-weight:800; margin-bottom:6px; }
-  .card .desc { font-size:12px; color:#a6f8bf; margin-bottom:8px; opacity:0.95; }
-  .card .meta { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .small { font-size:12px; opacity:0.9; }
-  .controls-2 { display:flex; gap:6px; margin-left:auto; }
-  .status-Not\ Started{ background: rgba(255,255,255,0.03); color:#ffd; }
-  .status-Being\ Made{ background: rgba(0,255,110,0.06); color: #b9ffd6; }
-  .status-Confirmed{ background: rgba(0,200,100,0.08); color:#aaf3c7; }
-  .status-Done{ background: rgba(0,160,60,0.08); color:#88f0b1; text-decoration:line-through; }
-  .muted { color:#3a9a63; font-size:12px; }
-  .ghost {
-    border:1px dashed rgba(0,255,110,0.06); padding:8px; border-radius:6px; color:#97f7b8; background:linear-gradient(180deg, rgba(0,255,110,0.01), transparent);
-  }
-
+  html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+  body{background:#ffffff;display:flex;align-items:center;justify-content:center;padding:20px;}
+  /* initial white blank look */
+  #mainBlank{width:100%;max-width:980px;height:640px;background:#fff;border:2px solid #eee;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+  .topActions{display:flex;gap:14px;position:absolute;top:18px;left:18px;}
+  .btn{padding:10px 16px;border-radius:8px;border:0;cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+  .btn-code{background:#1f2937;color:var(--white)}
+  .btn-hack{background:#0f1720;color:var(--success)}
+  .titleBig{font-size:20px;font-weight:700;color:#111;margin-bottom:8px;}
+  .sub{color:#666;font-size:13px}
+  /* calendar container (hidden until unlocked) */
+  #calendarApp{display:none;width:100%;height:100%;background:linear-gradient(180deg,#0f1720,#071021);color:var(--white);padding:18px;box-sizing:border-box;border-radius:8px;}
+  .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .nav{display:flex;gap:8px;align-items:center;}
+  .nav button{background:transparent;border:1px solid rgba(255,255,255,0.06);color:inherit;padding:8px 10px;border-radius:8px;cursor:pointer}
+  .monthYear{font-size:18px;font-weight:700}
+  .layout{display:grid;grid-template-columns:1fr 320px;gap:14px;height:calc(100% - 62px);}
+  .calendarPanel{background:rgba(255,255,255,0.03);padding:12px;border-radius:10px;display:flex;flex-direction:column}
+  .weekDays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--muted);font-size:12px;margin-bottom:6px}
+  .daysGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;flex:1}
+  .dayCell{padding:10px;border-radius:8px;min-height:64px;background:transparent;cursor:pointer;position:relative;color:var(--white);box-sizing:border-box}
+  .dayNumber{font-weight:700}
+  .dayCell:hover{outline:1px solid rgba(255,255,255,0.04)}
+  .today{box-shadow:0 0 0 2px rgba(6,182,212,0.12);border-radius:8px}
+  .hasEventDot{position:absolute;right:8px;bottom:8px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+  .sidebar{background:rgba(255,255,255,0.02);padding:12px;border-radius:10px;display:flex;flex-direction:column}
+  .addBtn{background:var(--accent);color:#063; border:0;padding:10px;border-radius:8px;cursor:pointer;font-weight:700;margin-bottom:8px}
+  .list{overflow:auto;flex:1;padding-right:6px}
+  .eventItem{background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;margin-bottom:8px}
+  .small{font-size:12px;color:var(--muted)}
+  /* modal */
+  .modalBg{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal{background:#0b1220;padding:16px;border-radius:12px;min-width:320px;color:var(--white)}
+  .formRow{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+  input,textarea,select{background:#071126;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--white);outline:0}
+  textarea{min-height:80px;resize:vertical}
   /* hack overlay */
-  .hack-overlay{
-    position:fixed; inset:0; display:none; z-index:99999; backdrop-filter: blur(4px);
-    background: linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.9));
-    color:var(--accent); font-family: "Courier New", monospace;
-    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px;
-  }
-  .hack-box{
-    width:92%; max-width:900px; height:70%; background:#001a0d; border-radius:8px; padding:14px; overflow:auto; border:1px solid rgba(0,255,110,0.06);
-  }
-  .hack-feed { height:calc(100% - 36px); overflow:auto; font-size:12px; line-height:1.2; white-space:pre; color:#8cff9e; }
-  .hack-footer { display:flex; gap:12px; align-items:center; justify-content:space-between; margin-top:6px; color:#9efbb0; }
-  .green-big{ color:var(--accent); font-weight:800; font-size:20px; }
-
+  .hackOverlay{position:absolute;inset:0;background:#000;display:none;align-items:center;justify-content:center;z-index:40;flex-direction:column;color:var(--success)}
+  .terminal{background:#041018;padding:18px;border-radius:12px;width:92%;max-width:720px;min-height:220px;box-shadow:0 10px 40px rgba(2,6,23,0.6);font-family: 'Courier New', monospace;color:var(--success);display:flex;flex-direction:column;gap:12px}
+  .greenNum{font-size:22px;font-weight:800;letter-spacing:2px}
+  .progressBar{height:8px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden}
+  .progressFill{height:100%;background:linear-gradient(90deg,var(--success),#66ffb2);width:0%}
+  .mutedSmall{color:#6b7280;font-size:13px}
+  .danger{color:var(--danger)}
   /* responsive */
-  @media (max-width:700px){
-    .board { padding-bottom:60px; }
-    .part { min-width:220px; }
-    .topbar { flex-wrap:wrap; gap:8px; }
-  }
+  @media (max-width:860px){ .layout{grid-template-columns:1fr} .sidebar{order:2} .calendarPanel{order:1} }
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="topbar">
-    <div class="logo">HackerBoard • Updates</div>
 
-    <div style="padding:8px 12px; border-radius:8px; border:1px solid rgba(0,255,110,0.03); background:rgba(0,0,0,0.25)">
-      <span class="muted">Status:</span>
-      <span id="adminStatus" class="small muted">Locked</span>
-    </div>
-
-    <div class="controls">
-      <input id="codeInput" class="code" placeholder="code" value="" />
-      <button id="unlockBtn" class="btn" title="Enter code 555 to unlock">Unlock</button>
-      <button id="hackBtn" class="btn" title="Simulate a hack (10 minutes)">Hack</button>
-      <button id="addPartBtn" class="btn" title="Add a new part (requires unlock)" disabled>Add Part</button>
-    </div>
+<div id="mainBlank">
+  <div class="topActions">
+    <button class="btn btn-code" id="btnCode">Code</button>
+    <button class="btn btn-hack" id="btnHack">Hack</button>
   </div>
 
-  <div id="board" class="board" aria-live="polite"></div>
-
-  <div style="font-size:12px; color:#94f7b5; opacity:0.9; margin-top:6px;">
-    Tips: create parts (columns), then add cards inside. You can mark parts/cards as admin-only (hidden until unlock with code 555).
+  <div style="text-align:center;">
+    <div class="titleBig">Welcome</div>
+    <div class="sub">This page is protected. Admins can unlock with code or users can choose to "hack" (7 minutes simulated).</div>
   </div>
-</div>
 
-<!-- hack overlay -->
-<div id="hackOverlay" class="hack-overlay" role="dialog" aria-modal="true">
-  <div class="hack-box">
-    <div class="green-big">HACK SIMULATOR</div>
-    <div id="hackFeed" class="hack-feed"></div>
-    <div class="hack-footer">
-      <div id="hackTimer" class="small">10:00</div>
-      <div class="muted">Keep this tab open. Hacking will run for 10 minutes. (This is simulation — it does not unlock admin features.)</div>
-      <button id="stopHackBtn" class="btn">Abort Hack</button>
+  <!-- Hack overlay (simulated) -->
+  <div class="hackOverlay" id="hackOverlay">
+    <div class="terminal" id="terminal">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>Simulated Hack Engine</strong></div>
+        <div class="mutedSmall">Connection: OK</div>
+      </div>
+      <div id="terminalLines" style="min-height:80px">
+        <div>Initializing hack sequence...</div>
+        <div class="greenNum" id="greenCount">0%</div>
+        <div class="mutedSmall" id="timeLeft">7:00 minutes remaining</div>
+      </div>
+      <div class="progressBar"><div class="progressFill" id="progressFill"></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="mutedSmall" id="termLog">Brute force starting</div>
+        <div><button class="btn" id="cancelHack" style="background:#111;color:var(--muted)">Cancel</button></div>
+      </div>
     </div>
   </div>
-</div>
 
-<script>
-/* ---------- Data model & storage ---------- */
-const STORAGE_KEY = 'hackerboard_data_v1';
-const ADMIN_KEY = 'hackerboard_admin_unlocked_session'; // stored in sessionStorage for the session
-let state = {
-  parts: []
-};
+  <!-- Calendar app (hidden until unlocked) -->
+  <div id="calendarApp">
+    <div class="header">
+      <div>
+        <div class="monthYear" id="monthYearLabel">Month Year</div>
+        <div class="small">Admin view — add, edit and delete events</div>
+      </div>
+      <div class="nav">
+        <button id="prevMonth">&larr;</button>
+        <button id="nextMonth">&rarr;</button>
+        <button id="jumpToday">Today</button>
+        <button id="logoutBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px;border-radius:8px;color:#fff">Logout</button>
+      </div>
+    </div>
 
-// sample initial data (one public part and one admin-only part)
-const sample = [
-  { id: genId(), title: "Public Updates", adminOnly: false, cards: [
-      { id: genId(), title: "Website skeleton", desc: "Initial framework & design", status: "Being Made", adminOnly: false },
-      { id: genId(), title: "Design green theme", desc: "Hacker green look", status: "Not Started", adminOnly: false }
-    ]},
-  { id: genId(), title: "Admin Abuse (private)", adminOnly: true, cards: [
-      { id: genId(), title: "Investigate logs", desc: "Check for suspicious admin actions", status: "Not Started", adminOnly:true },
-      { id: genId(), title: "Privileged card", desc: "Secret plan", status: "Confirmed", adminOnly:true }
-    ]}
-];
+    <div class="layout">
+      <div class="calendarPanel">
+        <div class="weekDays">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div class="daysGrid" id="daysGrid"></div>
+      </div>
 
-function genId(){ return 'id_' + Math.random().toString(36).slice(2,9); }
-
-function loadState(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if(raw){
-    try{
-      state = JSON.parse(raw);
-    }catch(e){
-      console.error("failed parse storage", e);
-      state = { parts: [] };
-    }
-  } else {
-    state.parts = sample;
-    saveState();
-  }
-}
-function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-
-/* ---------- Admin unlock logic ---------- */
-let adminUnlocked = sessionStorage.getItem(ADMIN_KEY) === '1';
-
-const codeInput = document.getElementById('codeInput');
-const unlockBtn = document.getElementById('unlockBtn');
-const addPartBtn = document.getElementById('addPartBtn');
-const adminStatus = document.getElementById('adminStatus');
-
-function setAdminUnlocked(val){
-  adminUnlocked = !!val;
-  sessionStorage.setItem(ADMIN_KEY, adminUnlocked ? '1' : '0');
-  adminStatus.textContent = adminUnlocked ? 'Admin: unlocked' : 'Locked';
-  addPartBtn.disabled = !adminUnlocked;
-  renderBoard();
-}
-
-unlockBtn.addEventListener('click', ()=>{
-  const code = codeInput.value.trim();
-  if(code === '555'){
-    setAdminUnlocked(true);
-    flashNotice("Unlocked: admin features enabled");
-    codeInput.value = '';
-  } else {
-    flashNotice("Wrong code");
-  }
-});
-codeInput.addEventListener('keydown', e=>{
-  if(e.key === 'Enter') unlockBtn.click();
-});
-
-/* ---------- UI rendering ---------- */
-const boardEl = document.getElementById('board');
-
-function renderBoard(){
-  boardEl.innerHTML = '';
-  if(state.parts.length === 0){
-    boardEl.innerHTML = '<div class="ghost">No parts yet. Add a part to start.</div>';
-    return;
-  }
-  state.parts.forEach(part => {
-    // skip adminOnly parts if not unlocked
-    if(part.adminOnly && !adminUnlocked) return;
-
-    const partEl = document.createElement('div');
-    partEl.className = 'part';
-    partEl.dataset.partId = part.id;
-    partEl.innerHTML = `
-      <div class="part-header">
-        <div class="part-title">${escapeHtml(part.title)}</div>
-        ${part.adminOnly ? '<div class="part-admin">ADMIN</div>' : ''}
-        <div class="part-actions">
-          <button class="btn editPartBtn">Edit</button>
-          <button class="btn delPartBtn">Delete</button>
-          <button class="btn addCardBtn" ${adminUnlocked ? '' : 'disabled'}>Add Card</button>
+      <div class="sidebar">
+        <button class="addBtn" id="openAdd">+ Add event</button>
+        <div class="small" style="margin-bottom:8px">Selected date: <span id="selectedDateLabel">—</span></div>
+        <div class="list" id="eventsList">
+          <div class="mutedSmall">No events yet.</div>
         </div>
       </div>
-      <div class="cards"></div>
-    `;
-    const cardsContainer = partEl.querySelector('.cards');
+    </div>
+  </div>
 
-    // render each card
-    (part.cards || []).forEach(card=>{
-      if(card.adminOnly && !adminUnlocked) return;
-      const cardEl = document.createElement('div');
-      cardEl.className = 'card';
-      cardEl.dataset.cardId = card.id;
-      cardEl.innerHTML = `
-        <div class="title">${escapeHtml(card.title)}</div>
-        <div class="desc">${escapeHtml(card.desc || '')}</div>
-        <div class="meta">
-          <div class="status-pill status-${escapeHtml(card.status)}">${escapeHtml(card.status)}</div>
-          ${card.adminOnly ? '<div class="small">[admin]</div>' : ''}
-          <div class="controls-2" style="margin-left:auto">
-            <select class="statusSelect small">
-              <option>Not Started</option>
-              <option>Being Made</option>
-              <option>Confirmed</option>
-              <option>Done</option>
-            </select>
-            <button class="btn editCardBtn small">Edit</button>
-            <button class="btn delCardBtn small" style="background:rgba(255,77,77,0.06); border-color:rgba(255,77,77,0.12);">Delete</button>
-          </div>
-        </div>
-      `;
-      // set the select value
-      const sel = cardEl.querySelector('.statusSelect');
-      sel.value = card.status;
+</div>
 
-      // event bindings
-      sel.addEventListener('change', ()=>{
-        card.status = sel.value;
-        saveState();
-        renderBoard();
-      });
+<!-- modal -->
+<div class="modalBg" id="modalBg">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-weight:800" id="modalTitle">Add Event</div>
+      <div style="font-size:12px;color:var(--muted)" id="modalHint">Admin</div>
+    </div>
+    <div class="formRow">
+      <label class="small">Title</label>
+      <input id="evtTitle" placeholder="Event title"/>
+    </div>
+    <div class="formRow">
+      <label class="small">Description</label>
+      <textarea id="evtDesc" placeholder="Details..."></textarea>
+    </div>
+    <div class="formRow" style="flex-direction:row;gap:8px">
+      <div style="flex:1">
+        <label class="small">Year</label>
+        <select id="selYear"></select>
+      </div>
+      <div style="flex:1">
+        <label class="small">Month</label>
+        <select id="selMonth"></select>
+      </div>
+    </div>
+    <div class="formRow" style="flex-direction:row;gap:8px">
+      <div style="flex:1">
+        <label class="small">Day</label>
+        <select id="selDay"></select>
+      </div>
+      <div style="flex:1">
+        <label class="small">Time (HH:MM)</label>
+        <input id="evtTime" placeholder="15:30"/>
+      </div>
+    </div>
 
-      cardEl.querySelector('.editCardBtn').addEventListener('click', ()=> openEditCardModal(part.id, card.id));
-      cardEl.querySelector('.delCardBtn').addEventListener('click', ()=> {
-        if(confirm('Delete this card?')) {
-          part.cards = part.cards.filter(c=>c.id !== card.id);
-          saveState(); renderBoard();
-        }
-      });
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" id="closeModal" style="background:#111;color:var(--muted)">Cancel</button>
+      <button class="btn" id="saveEvent" style="background:var(--accent);color:#012">Save</button>
+    </div>
+  </div>
+</div>
 
-      cardsContainer.appendChild(cardEl);
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+<script>
+/* =======================
+   Put your Firebase config here (you gave this in the message)
+   ======================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
+  authDomain: "the-challenge-fa9b2.firebaseapp.com",
+  databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
+  projectId: "the-challenge-fa9b2",
+  storageBucket: "the-challenge-fa9b2.firebasestorage.app",
+  messagingSenderId: "4102830619",
+  appId: "1:4102830619:web:581e033f36ec02708916be",
+  measurementId: "G-7M7JLK1V86"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ====== UI shortcuts ====== */
+const btnCode = document.getElementById('btnCode');
+const btnHack = document.getElementById('btnHack');
+const hackOverlay = document.getElementById('hackOverlay');
+const terminalLines = document.getElementById('terminalLines');
+const greenCount = document.getElementById('greenCount');
+const timeLeftLabel = document.getElementById('timeLeft');
+const progressFill = document.getElementById('progressFill');
+const cancelHack = document.getElementById('cancelHack');
+const modalBg = document.getElementById('modalBg');
+const openAdd = document.getElementById('openAdd');
+const calendarApp = document.getElementById('calendarApp');
+const mainBlank = document.getElementById('mainBlank');
+const btnLogout = document.getElementById('logoutBtn');
+
+let sessionHackUnlocked = false; // will be true after a successful hack in this session
+const HACK_SECONDS = 7 * 60; // 7 minutes
+let hackInterval = null;
+
+/* Helper: format number two digits */
+function pad(n){return (n<10? '0':'')+n}
+
+/* --- Code button flow (admin code: 555) --- */
+btnCode.addEventListener('click', async () => {
+  const code = prompt('Enter admin code:');
+  if(code === null) return;
+  if(code.trim() === '555'){
+    localStorage.setItem('isAdmin','1'); // persistent admin
+    revealCalendar();
+    alert('Admin code accepted — calendar unlocked.');
+  } else {
+    alert('Wrong code.');
+  }
+});
+
+/* --- Hack flow --- */
+btnHack.addEventListener('click', () => {
+  // Always require the 7-minute simulation fresh each time (per your "every time they enter")
+  startHackSimulation();
+});
+
+cancelHack.addEventListener('click', () => {
+  stopHackSimulation(true);
+});
+
+function startHackSimulation(){
+  if(hackInterval) return;
+  // show overlay
+  hackOverlay.style.display = 'flex';
+  // start with full seconds
+  let startedAt = Date.now();
+  let secondsTotal = HACK_SECONDS;
+  // Save start time in sessionStorage so that reload keeps progress during this tab session
+  sessionStorage.setItem('hackStart', startedAt.toString());
+
+  function tick(){
+    const now = Date.now();
+    const elapsed = Math.floor((now - startedAt)/1000);
+    const remaining = Math.max(0, secondsTotal - elapsed);
+    const pct = Math.floor((elapsed / secondsTotal) * 100);
+    greenCount.textContent = pct + '%';
+    timeLeftLabel.textContent = Math.floor(remaining/60) + ':' + pad(remaining%60) + ' remaining';
+    progressFill.style.width = pct + '%';
+    // animated terminal lines (fake)
+    const fakeLine = generateFakeLine();
+    document.getElementById('termLog').textContent = fakeLine;
+
+    if(remaining <= 0){
+      completeHack();
+      return;
+    }
+  }
+  tick();
+  hackInterval = setInterval(tick, 1000);
+}
+
+/* If user reloads page but still in same session and hack started, resume */
+(function resumeHackIfInProgress(){
+  const s = sessionStorage.getItem('hackStart');
+  if(s){
+    const startedAt = parseInt(s,10);
+    const elapsed = Math.floor((Date.now() - startedAt)/1000);
+    if(elapsed < HACK_SECONDS){
+      // resume
+      startHackSimulation();
+    } else {
+      // already finished in this session (rare), set session unlocked and remove start
+      sessionStorage.removeItem('hackStart');
+      sessionHackUnlocked = true;
+      revealCalendarSession();
+    }
+  }
+})();
+
+function stopHackSimulation(asCancel=false){
+  if(hackInterval) clearInterval(hackInterval);
+  hackInterval = null;
+  sessionStorage.removeItem('hackStart');
+  hackOverlay.style.display = 'none';
+  progressFill.style.width = '0%';
+  greenCount.textContent = '0%';
+  timeLeftLabel.textContent = '7:00 minutes remaining';
+  if(asCancel){
+    document.getElementById('termLog').textContent = 'Hack aborted.';
+  }
+}
+
+function completeHack(){
+  stopHackSimulation(false);
+  sessionHackUnlocked = true; // unlocked for this session only
+  revealCalendarSession();
+  alert('Hack complete! You can now see the calendar for this session.');
+}
+
+/* Fake terminal generator */
+function generateFakeLine(){
+  const words = [
+    'scanning','brute-forcing','decrypting','bypassing','alloc','memchk','xor','auth','ping','sync','handshake','port-scan','inject','seed','running','payload'
+  ];
+  const a = words[Math.floor(Math.random()*words.length)];
+  const b = Math.floor(Math.random()*99999);
+  return `${a}... id:${b}`;
+}
+
+/* ==== Unlock and UI behavior ==== */
+function revealCalendar(){
+  // full admin persistent unlock
+  mainBlank.style.display = 'none';
+  calendarApp.style.display = 'block';
+  initializeCalendar();
+}
+
+function revealCalendarSession(){
+  // only for this session (hacked)
+  mainBlank.style.display = 'none';
+  calendarApp.style.display = 'block';
+  initializeCalendar();
+}
+
+/* Logout clears admin localStorage and reloads to start screen */
+btnLogout.addEventListener('click', () => {
+  localStorage.removeItem('isAdmin');
+  // clearing session hack too
+  sessionHackUnlocked = false;
+  location.reload();
+});
+
+/* If a persistent admin exists, auto-unlock */
+if(localStorage.getItem('isAdmin')){
+  revealCalendar();
+}
+
+/* ========== Calendar logic ========== */
+const daysGrid = document.getElementById('daysGrid');
+const monthYearLabel = document.getElementById('monthYearLabel');
+const selectedDateLabel = document.getElementById('selectedDateLabel');
+const eventsList = document.getElementById('eventsList');
+
+let viewDate = new Date(); // the month/year we show
+let selectedDate = new Date(); // selected day
+let eventsCache = {}; // local cache of events from firebase: { id: eventObj }
+
+document.getElementById('prevMonth').addEventListener('click', ()=> { viewDate.setMonth(viewDate.getMonth()-1); renderCalendar(); });
+document.getElementById('nextMonth').addEventListener('click', ()=> { viewDate.setMonth(viewDate.getMonth()+1); renderCalendar(); });
+document.getElementById('jumpToday').addEventListener('click', ()=> { viewDate = new Date(); selectedDate = new Date(); renderCalendar(); updateSelectedDate(); });
+
+document.getElementById('openAdd').addEventListener('click', ()=> openAddModal());
+
+/* modal controls */
+document.getElementById('closeModal').addEventListener('click', ()=> { modalBg.style.display='none'; });
+document.getElementById('saveEvent').addEventListener('click', saveEvent);
+
+/* populate year/month selects */
+const selYear = document.getElementById('selYear');
+const selMonth = document.getElementById('selMonth');
+const selDay = document.getElementById('selDay');
+
+function fillYearMonthDaySelectors(y,m,d){
+  selYear.innerHTML = '';
+  const currentYear = new Date().getFullYear();
+  for(let yy = currentYear - 5; yy <= currentYear + 5; yy++){
+    const opt = document.createElement('option'); opt.value=yy; opt.textContent=yy;
+    if(yy===y) opt.selected=true;
+    selYear.appendChild(opt);
+  }
+  selMonth.innerHTML = '';
+  for(let mm=0; mm<12; mm++){
+    const opt = document.createElement('option'); opt.value=mm; opt.textContent = new Date(0,mm).toLocaleString(undefined,{month:'long'});
+    if(mm===m) opt.selected=true;
+    selMonth.appendChild(opt);
+  }
+  populateDays(y,m,d);
+}
+
+function populateDays(y,m,selectedD){
+  selDay.innerHTML = '';
+  const days = new Date(y,m+1,0).getDate();
+  for(let dd=1; dd<=days; dd++){
+    const opt = document.createElement('option'); opt.value=dd; opt.textContent=dd;
+    if(dd===selectedD) opt.selected=true;
+    selDay.appendChild(opt);
+  }
+}
+
+/* open add modal with defaults */
+function openAddModal(editObj){
+  // editObj optional {id, title, desc, year, month, day, time}
+  modalBg.style.display='flex';
+  document.getElementById('modalTitle').textContent = editObj ? 'Edit Event' : 'Add Event';
+  document.getElementById('evtTitle').value = editObj ? editObj.title : '';
+  document.getElementById('evtDesc').value = editObj ? editObj.description : '';
+  const y = editObj ? editObj.year : selectedDate.getFullYear();
+  const m = editObj ? editObj.month : selectedDate.getMonth();
+  const d = editObj ? editObj.day : selectedDate.getDate();
+  fillYearMonthDaySelectors(y,m,d);
+  document.getElementById('evtTime').value = editObj ? editObj.time : (('00'+selectedDate.getHours()).slice(-2)+':'+('00'+selectedDate.getMinutes()).slice(-2));
+  // if editing, attach id for save
+  document.getElementById('saveEvent').dataset.editId = editObj ? editObj.id : '';
+}
+
+/* create / update event */
+function saveEvent(){
+  const title = document.getElementById('evtTitle').value.trim();
+  const desc = document.getElementById('evtDesc').value.trim();
+  const year = parseInt(selYear.value,10);
+  const month = parseInt(selMonth.value,10);
+  const day = parseInt(selDay.value,10);
+  let time = document.getElementById('evtTime').value.trim();
+  if(!/^\d{1,2}:\d{2}$/.test(time)){
+    alert('Time format must be HH:MM');
+    return;
+  }
+  // normalize to HH:MM
+  const parts = time.split(':');
+  const hh = Math.max(0, Math.min(23, parseInt(parts[0],10)));
+  const mm = Math.max(0, Math.min(59, parseInt(parts[1],10)));
+  time = pad(hh)+':'+pad(mm);
+
+  if(title.length===0){ alert('Please add a title'); return; }
+
+  const editId = document.getElementById('saveEvent').dataset.editId;
+  if(editId){
+    // update existing
+    const ref = db.ref('calendarEvents/' + editId);
+    ref.update({ title, description: desc, year, month, day, time, updatedAt: Date.now() });
+    modalBg.style.display='none';
+    document.getElementById('saveEvent').dataset.editId = '';
+  } else {
+    // push new
+    const newRef = db.ref('calendarEvents').push();
+    newRef.set({ title, description: desc, year, month, day, time, createdAt: Date.now() });
+    modalBg.style.display='none';
+  }
+}
+
+/* load events from firebase and keep local cache */
+function listenEvents(){
+  const ref = db.ref('calendarEvents');
+  ref.on('value', snap => {
+    const val = snap.val() || {};
+    eventsCache = {};
+    Object.keys(val).forEach(id => {
+      eventsCache[id] = Object.assign({ id }, val[id]);
     });
-
-    // part actions
-    partEl.querySelector('.addCardBtn').addEventListener('click', ()=> openAddCardModal(part.id));
-    partEl.querySelector('.delPartBtn').addEventListener('click', ()=>{
-      if(confirm('Delete this part and all its cards?')) {
-        state.parts = state.parts.filter(p=>p.id !== part.id);
-        saveState(); renderBoard();
-      }
-    });
-    partEl.querySelector('.editPartBtn').addEventListener('click', ()=> openEditPartModal(part.id));
-
-    boardEl.appendChild(partEl);
+    // refresh visuals
+    renderCalendar();
+    updateSelectedDate();
   });
 }
 
-/* ---------- helpers ---------- */
-function escapeHtml(s){ return (s+'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+/* render calendar month */
+function renderCalendar(){
+  daysGrid.innerHTML = '';
+  const y = viewDate.getFullYear();
+  const m = viewDate.getMonth();
+  monthYearLabel.textContent = viewDate.toLocaleString(undefined,{month:'long', year:'numeric'});
 
-function flashNotice(t){
-  // quick console-like flash
-  const el = document.createElement('div');
-  el.textContent = t;
-  el.style.position='fixed'; el.style.right='18px'; el.style.bottom='18px';
-  el.style.background='rgba(0,0,0,0.6)'; el.style.color='var(--accent)';
-  el.style.padding='8px 12px'; el.style.borderRadius='8px'; el.style.zIndex=99999;
-  document.body.appendChild(el);
-  setTimeout(()=> el.remove(),2200);
-}
+  // first day index (0..6)
+  const firstDayIndex = new Date(y,m,1).getDay();
+  const daysInMonth = new Date(y,m+1,0).getDate();
 
-/* ---------- Add / Edit modals (built with prompt() to keep single file) ---------- */
-function openAddCardModal(partId){
-  const part = state.parts.find(p=>p.id===partId);
-  if(!part) return;
-  if(!adminUnlocked){ flashNotice('Add Card requires admin unlock'); return; }
+  // previous month filler
+  const prevDays = firstDayIndex;
+  for(let i=0;i<prevDays;i++){
+    const el = document.createElement('div'); el.className='dayCell'; el.style.opacity='0.25'; daysGrid.appendChild(el);
+  }
+  // days
+  for(let d=1; d<=daysInMonth; d++){
+    const el = document.createElement('div'); el.className='dayCell';
+    const dt = new Date(y,m,d);
+    const dayNum = document.createElement('div'); dayNum.className='dayNumber'; dayNum.textContent=d;
+    el.appendChild(dayNum);
 
-  const title = prompt('Card title:');
-  if(!title) return;
-  const desc = prompt('Card description:') || '';
-  const isAdminOnly = confirm('Make this card admin-only (hidden until unlock)? OK = yes, Cancel = no');
-  const card = { id: genId(), title: title.trim(), desc: desc.trim(), status: 'Not Started', adminOnly: !!isAdminOnly };
-  part.cards = part.cards || [];
-  part.cards.push(card);
-  saveState(); renderBoard();
-}
-
-function openEditCardModal(partId, cardId){
-  const part = state.parts.find(p=>p.id===partId);
-  if(!part) return;
-  const card = part.cards.find(c=>c.id===cardId);
-  if(!card) return;
-  if(card.adminOnly && !adminUnlocked){ flashNotice('Cannot edit admin-only card while locked'); return; }
-  const title = prompt('Edit card title:', card.title);
-  if(title === null) return;
-  const desc = prompt('Edit description:', card.desc || '') || '';
-  const makeAdmin = confirm('Make admin-only? OK = yes, Cancel = no');
-  card.title = title.trim();
-  card.desc = desc.trim();
-  card.adminOnly = !!makeAdmin;
-  saveState(); renderBoard();
-}
-
-function openEditPartModal(partId){
-  const part = state.parts.find(p=>p.id===partId);
-  if(!part) return;
-  const title = prompt('Edit part title:', part.title);
-  if(title === null) return;
-  const makeAdmin = confirm('Make this part admin-only? OK = yes, Cancel = no');
-  part.title = title.trim();
-  part.adminOnly = !!makeAdmin;
-  saveState(); renderBoard();
-}
-
-/* ---------- Add Part button ---------- */
-addPartBtn.addEventListener('click', ()=>{
-  if(!adminUnlocked){ flashNotice('Add Part requires admin unlock'); return; }
-  const title = prompt('Part (column) title:');
-  if(!title) return;
-  const makeAdmin = confirm('Make this part admin-only? OK = yes, Cancel = no');
-  state.parts.push({ id: genId(), title: title.trim(), adminOnly: !!makeAdmin, cards: [] });
-  saveState(); renderBoard();
-});
-
-/* ---------- initial load ---------- */
-loadState();
-setAdminUnlocked(adminUnlocked);
-renderBoard();
-
-/* ---------- Hack simulator (10 minutes) ---------- */
-const hackBtn = document.getElementById('hackBtn');
-const hackOverlay = document.getElementById('hackOverlay');
-const hackFeed = document.getElementById('hackFeed');
-const hackTimer = document.getElementById('hackTimer');
-const stopHackBtn = document.getElementById('stopHackBtn');
-
-let hackInterval = null;
-let hackStart = null;
-let hackDurationSec = 10 * 60; // 10 minutes = 600 sec
-let hackTickerInterval = null;
-
-function startHack(){
-  if(hackInterval) return;
-  hackOverlay.style.display = 'flex';
-  hackFeed.textContent = '';
-  hackStart = Date.now();
-  let seed = 0;
-  // generate lots of numbers in stream
-  hackInterval = setInterval(()=>{
-    seed++;
-    const lines = [];
-    for(let i=0;i<6;i++){
-      const hex = Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0');
-      const num = Math.floor(Math.random()*1e12).toString().padStart(12,'0');
-      lines.push(`[${new Date().toLocaleTimeString()}] 0x${hex} ${num}`);
+    // events indicator
+    const has = hasEventsOn(y,m,d);
+    if(has) {
+      const dot = document.createElement('div'); dot.className='hasEventDot'; el.appendChild(dot);
     }
-    hackFeed.textContent = (hackFeed.textContent + lines.join('\n') + '\n').slice(-3000);
-    hackFeed.scrollTop = hackFeed.scrollHeight;
-  }, 450);
-
-  // timer
-  hackTickerInterval = setInterval(()=>{
-    const elapsed = Math.floor((Date.now() - hackStart)/1000);
-    const remain = hackDurationSec - elapsed;
-    if(remain <= 0){
-      stopHack(true);
-      return;
+    // highlight today
+    const today = new Date();
+    if(today.getFullYear()===y && today.getMonth()===m && today.getDate()===d){
+      el.classList.add('today');
     }
-    const mm = String(Math.floor(remain/60)).padStart(2,'0');
-    const ss = String(remain%60).padStart(2,'0');
-    hackTimer.textContent = `${mm}:${ss} remaining`;
-  }, 700);
 
-  // safety: update initial timer immediately
-  hackTimer.textContent = `${String(Math.floor(hackDurationSec/60)).padStart(2,'0')}:${String(hackDurationSec%60).padStart(2,'0')} remaining`;
-}
+    // click to select
+    el.addEventListener('click', ()=> {
+      selectedDate = dt;
+      updateSelectedDate();
+    });
 
-function stopHack(finished=false){
-  if(hackInterval){ clearInterval(hackInterval); hackInterval = null; }
-  if(hackTickerInterval){ clearInterval(hackTickerInterval); hackTickerInterval = null; }
-  hackOverlay.style.display = 'none';
-  if(finished){
-    // the spec: hack runs 10 mins and shows numbers & minutes left; it should not unlock admin features.
-    flashNotice('Hack finished (simulation). Admin features remain locked.');
-  } else {
-    flashNotice('Hack aborted.');
+    daysGrid.appendChild(el);
   }
 }
 
-hackBtn.addEventListener('click', ()=>{
-  startHack();
-});
-stopHackBtn.addEventListener('click', ()=> stopHack(false));
-
-/* ---------- keyboard shortcuts (fun) ---------- */
-document.addEventListener('keydown', (e)=>{
-  if(e.ctrlKey && e.key === 'u'){
-    // quick unlock (shows prompt)
-    const code = prompt('Enter admin code:');
-    if(code === '555'){ setAdminUnlocked(true); flashNotice('Unlocked via shortcut'); }
-    else flashNotice('Wrong code');
+/* helper: check events for date */
+function hasEventsOn(year,month,day){
+  for(const id in eventsCache){
+    const e = eventsCache[id];
+    if(e.year===year && e.month===month && e.day===day) return true;
   }
-});
-
-/* ---------- small safety: prevent accidental clearing ---------- */
-/* Provide a button to reset sample data (commented out) — left for debugging */
-/*
-function resetToSample(){
-  state.parts = sample;
-  saveState();
-  renderBoard();
+  return false;
 }
-*/
 
-/* ---------- end of file ---------- */
+/* update details on selectedDate */
+function updateSelectedDate(){
+  selectedDateLabel.textContent = selectedDate.toDateString();
+  fillYearMonthDaySelectors(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+  // list events
+  const arr = [];
+  for(const id in eventsCache){
+    const e = eventsCache[id];
+    if(e.year===selectedDate.getFullYear() && e.month===selectedDate.getMonth() && e.day===selectedDate.getDate()){
+      arr.push(Object.assign({id}, e));
+    }
+  }
+  arr.sort((a,b)=> (a.time||'00:00').localeCompare(b.time||'00:00'));
+  eventsList.innerHTML = '';
+  if(arr.length===0) eventsList.innerHTML = '<div class="mutedSmall">No events for selected date.</div>';
+  arr.forEach(e => {
+    const div = document.createElement('div'); div.className='eventItem';
+    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+      <div><strong>${escapeHtml(e.title)}</strong><div class="small">${e.time || ''}</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn" style="padding:6px 8px;font-size:12px" onclick="viewEvent('${e.id}')">View</button>
+        <button class="btn" style="background:#222;color:#fff;padding:6px 8px;font-size:12px" onclick="editEvent('${e.id}')">Edit</button>
+        <button class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px 8px;font-size:12px" onclick="deleteEvent('${e.id}')">Delete</button>
+      </div>
+    </div>
+    <div class="small" style="margin-top:6px">${escapeHtml(e.description || '')}</div>`;
+    eventsList.appendChild(div);
+  });
+}
+
+/* view / edit / delete handlers (global so used from inline onclick) */
+window.viewEvent = function(id){
+  const e = eventsCache[id];
+  if(!e) return alert('Event not found');
+  alert(`Title: ${e.title}\nTime: ${e.time}\nDate: ${e.year}-${e.month+1}-${e.day}\n\n${e.description || ''}`);
+}
+
+window.editEvent = function(id){
+  const e = eventsCache[id];
+  if(!e) return alert('Event not found');
+  openAddModal(Object.assign({ id }, e));
+}
+
+window.deleteEvent = function(id){
+  if(!confirm('Delete this event?')) return;
+  db.ref('calendarEvents/' + id).remove();
+}
+
+/* init calendar once visible */
+let calendarInitialized = false;
+function initializeCalendar(){
+  if(calendarInitialized) return;
+  calendarInitialized = true;
+  renderCalendar();
+  updateSelectedDate();
+  listenEvents();
+}
+
+/* small helper to escape HTML for display */
+function escapeHtml(str){ return String(str).replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
+
+/* On page load make sure session hack is cleared (so hack required each visit unless admin code set) */
+window.addEventListener('load', ()=> {
+  // per spec: hack takes 7 mins each time they enter -> we clear any previous session "unlocked" state
+  sessionHackUnlocked = false;
+});
 </script>
 </body>
 </html>
