@@ -3,15 +3,16 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Locked Calendar (Admin 555)</title>
+<title>Locked Calendar — asks again after refresh</title>
 <style>
-  :root{--bg:#ffffff;--panel:#0f1720;--muted:#9aa4b2;--accent:#06b6d4;--white:#fff;}
+  :root{--bg:#ffffff;--panel:#0f1720;--muted:#9aa4b2;--accent:#06b6d4;--white:#fff;--success:#22c55e}
   html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:var(--bg)}
   .centerWrap{height:100%;display:flex;align-items:center;justify-content:center}
   .blankCard{width:100%;max-width:960px;height:640px;background:#fff;border:2px solid #eee;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
   .titleBig{font-size:22px;font-weight:800;color:#111;margin-bottom:6px}
   .sub{color:#666;font-size:14px}
   .codeBtn{margin-top:14px;padding:12px 18px;border-radius:10px;border:0;background:#111;color:#fff;cursor:pointer;font-weight:700}
+  .small{font-size:12px;color:#9aa4b2}
 
   /* calendar styles */
   #calendarApp{display:none;width:100%;height:100%;background:linear-gradient(180deg,#061426,#081920);color:var(--white);padding:18px;box-sizing:border-box;border-radius:8px}
@@ -32,7 +33,6 @@
   .addBtn{background:var(--accent);color:#012;border:0;padding:10px;border-radius:8px;cursor:pointer;font-weight:700;margin-bottom:8px}
   .list{overflow:auto;flex:1;padding-right:6px}
   .eventItem{background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;margin-bottom:8px}
-  .small{font-size:12px;color:#9aa4b2}
 
   /* modal */
   .modalBg{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:none;align-items:center;justify-content:center;z-index:50}
@@ -41,8 +41,13 @@
   input,textarea,select{background:#071126;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--white);outline:0}
   textarea{min-height:80px;resize:vertical}
 
-  /* small helper */
-  .mutedSmall{color:#94a3b8;font-size:13px}
+  /* hack overlay */
+  .hackOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:60;color:var(--success)}
+  .terminal{background:#001217;padding:18px;border-radius:12px;width:92%;max-width:720px;min-height:220px;box-shadow:0 10px 40px rgba(2,6,23,0.6);font-family: 'Courier New', monospace;color:var(--success);display:flex;flex-direction:column;gap:12px}
+  .greenNum{font-size:22px;font-weight:800;letter-spacing:2px}
+  .progressBar{height:8px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden}
+  .progressFill{height:100%;background:linear-gradient(90deg,var(--success),#66ffb2);width:0%}
+
   @media (max-width:860px){ .layout{grid-template-columns:1fr} .sidebar{order:2} .calendarPanel{order:1} }
 </style>
 </head>
@@ -52,8 +57,12 @@
   <div class="blankCard" id="lockedScreen">
     <div style="text-align:center;">
       <div class="titleBig">This page is locked</div>
-      <div class="sub">Enter the admin code to view the calendar.</div>
-      <button class="codeBtn" id="enterCodeBtn">Enter Admin Code</button>
+      <div class="sub">Enter the admin code or run a simulated hack to view the calendar. Refreshing will lock again.</div>
+      <div style="margin-top:14px;display:flex;gap:10px;justify-content:center">
+        <button class="codeBtn" id="enterCodeBtn">Enter Admin Code</button>
+        <button class="codeBtn" id="startHackBtn" style="background:#082018;color:var(--success)">Hack (Simulated)</button>
+      </div>
+      <div style="margin-top:12px;color:#666;font-size:13px">Admin code: <strong>555</strong></div>
     </div>
   </div>
 
@@ -67,7 +76,7 @@
         <button id="prevMonth">&larr;</button>
         <button id="nextMonth">&rarr;</button>
         <button id="jumpToday">Today</button>
-        <button id="logoutBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px;border-radius:8px;color:#fff">Logout</button>
+        <button id="logoutBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px;border-radius:8px;color:#fff">Lock</button>
       </div>
     </div>
 
@@ -83,7 +92,7 @@
         <button class="addBtn" id="openAdd">+ Add event</button>
         <div class="small" style="margin-bottom:8px">Selected date: <span id="selectedDateLabel">—</span></div>
         <div class="list" id="eventsList">
-          <div class="mutedSmall">No events yet.</div>
+          <div class="small">No events yet.</div>
         </div>
       </div>
     </div>
@@ -95,7 +104,6 @@
   <div class="modal">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div style="font-weight:800" id="modalTitle">Add Event</div>
-      <div style="font-size:12px;color:#94a3b8" id="modalHint">Admin</div>
     </div>
     <div class="formRow">
       <label class="small">Title</label>
@@ -121,8 +129,16 @@
         <select id="selDay"></select>
       </div>
       <div style="flex:1">
-        <label class="small">Time (HH:MM)</label>
-        <input id="evtTime" placeholder="15:30"/>
+        <label class="small">Time</label>
+        <div style="display:flex;gap:6px">
+          <select id="selHour" style="min-width:72px"></select>
+          <select id="selMinute" style="min-width:72px"></select>
+          <select id="selAmPm" style="min-width:72px">
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+            <option value="N/A">N/A</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -147,11 +163,32 @@
   </div>
 </div>
 
+<!-- hack overlay -->
+<div class="hackOverlay" id="hackOverlay">
+  <div class="terminal">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><strong>Simulated Hack Engine</strong></div>
+      <div class="small">Connection: OK</div>
+    </div>
+    <div id="terminalLines" style="min-height:80px">
+      <div>Initializing hack sequence...</div>
+      <div class="greenNum" id="greenCount">0%</div>
+      <div class="small" id="timeLeft">7:00 remaining</div>
+    </div>
+    <div class="progressBar"><div class="progressFill" id="progressFill"></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="small" id="termLog">Brute force starting</div>
+      <div><button class="codeBtn" id="cancelHack" style="background:#111;color:#fff;padding:6px 10px">Cancel</button></div>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
+// Firebase config (your provided values)
 const firebaseConfig = {
   apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
   authDomain: "the-challenge-fa9b2.firebaseapp.com",
@@ -166,17 +203,31 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* UI refs */
+/* ===== state ===== */
+let isAdminSession = false; // only in-memory — cleared on refresh
+let hackUnlocked = false;   // only in-memory — cleared on refresh
+const HACK_SECONDS = 7 * 60; // 7 minutes simulated
+let hackInterval = null;
+
+/* ===== UI refs ===== */
 const lockedScreen = document.getElementById('lockedScreen');
 const calendarApp = document.getElementById('calendarApp');
 const enterCodeBtn = document.getElementById('enterCodeBtn');
+const startHackBtn = document.getElementById('startHackBtn');
 const codeModal = document.getElementById('codeModal');
 const closeCodeModal = document.getElementById('closeCodeModal');
 const submitCode = document.getElementById('submitCode');
 const adminCodeInput = document.getElementById('adminCodeInput');
 const logoutBtn = document.getElementById('logoutBtn');
 
-/* Calendar refs */
+const hackOverlay = document.getElementById('hackOverlay');
+const greenCount = document.getElementById('greenCount');
+const timeLeftLabel = document.getElementById('timeLeft');
+const progressFill = document.getElementById('progressFill');
+const termLog = document.getElementById('termLog');
+const cancelHack = document.getElementById('cancelHack');
+
+/* calendar refs */
 const daysGrid = document.getElementById('daysGrid');
 const monthYearLabel = document.getElementById('monthYearLabel');
 const selectedDateLabel = document.getElementById('selectedDateLabel');
@@ -185,7 +236,6 @@ const openAdd = document.getElementById('openAdd');
 const modalBg = document.getElementById('modalBg');
 const closeModal = document.getElementById('closeModal');
 const saveEventBtn = document.getElementById('saveEvent');
-
 const selYear = document.getElementById('selYear');
 const selMonth = document.getElementById('selMonth');
 const selDay = document.getElementById('selDay');
@@ -197,37 +247,85 @@ let selectedDate = new Date();
 
 function pad(n){return (n<10? '0':'')+n}
 
-/* Admin flow */
+/* ===== Admin code flow (no persistence) ===== */
 enterCodeBtn.addEventListener('click', ()=> { codeModal.style.display='flex'; adminCodeInput.value=''; adminCodeInput.focus(); });
-closeCodeModal.addEventListener('click', ()=> codeModal.style.display='none');
+closeCodeModal && closeCodeModal.addEventListener('click', ()=> codeModal.style.display='none');
 submitCode.addEventListener('click', ()=> {
-  const val = adminCodeInput.value.trim();
-  if(val === '555'){
-    localStorage.setItem('isAdmin','1');
+  const v = adminCodeInput.value.trim();
+  if(v === '555'){
+    isAdminSession = true;
     codeModal.style.display='none';
     revealCalendar();
-    alert('Admin unlocked — you can now view and edit the calendar.');
+    alert('Admin unlocked — calendar visible for this session. Refresh to lock again.');
   } else {
     alert('Wrong code');
   }
 });
 
-logoutBtn.addEventListener('click', ()=> { localStorage.removeItem('isAdmin'); location.reload(); });
+/* ===== Hack flow (simulated, session-only) ===== */
+startHackBtn.addEventListener('click', ()=> startHackSimulation());
+cancelHack.addEventListener('click', ()=> stopHackSimulation(true));
 
-/* Auto unlock if already admin */
-if(localStorage.getItem('isAdmin')){
-  revealCalendar();
+function startHackSimulation(){
+  if(hackInterval) return;
+  hackOverlay.style.display = 'flex';
+  const start = Date.now();
+  function tick(){
+    const elapsed = Math.floor((Date.now() - start)/1000);
+    const remaining = Math.max(0, HACK_SECONDS - elapsed);
+    const pct = Math.min(100, Math.floor((elapsed / HACK_SECONDS) * 100));
+    greenCount.textContent = pct + '%';
+    timeLeftLabel.textContent = Math.floor(remaining/60) + ':' + pad(remaining%60) + ' remaining';
+    progressFill.style.width = pct + '%';
+    termLog.textContent = fakeLine();
+    if(remaining <= 0){
+      completeHack();
+    }
+  }
+  tick();
+  hackInterval = setInterval(tick, 1000);
 }
 
-function revealCalendar(){ lockedScreen.style.display='none'; calendarApp.style.display='block'; initializeCalendar(); }
+function stopHackSimulation(asCancel){
+  if(hackInterval) clearInterval(hackInterval);
+  hackInterval = null;
+  hackOverlay.style.display = 'none';
+  progressFill.style.width = '0%';
+  greenCount.textContent = '0%';
+  timeLeftLabel.textContent = '7:00 remaining';
+  termLog.textContent = asCancel ? 'Hack aborted.' : '';
+}
 
-/* Calendar basic functions */
-document.getElementById('prevMonth').addEventListener('click', ()=> { viewDate.setMonth(viewDate.getMonth()-1); renderCalendar(); });
-document.getElementById('nextMonth').addEventListener('click', ()=> { viewDate.setMonth(viewDate.getMonth()+1); renderCalendar(); });
-document.getElementById('jumpToday').addEventListener('click', ()=> { viewDate = new Date(); selectedDate = new Date(); renderCalendar(); updateSelectedDate(); });
+function completeHack(){
+  stopHackSimulation(false);
+  hackUnlocked = true;
+  revealCalendar();
+  alert('Hack complete — calendar visible for this session. Refresh to lock again.');
+}
+
+function fakeLine(){
+  const words = ['scanning','brute-forcing','decrypting','bypassing','alloc','memchk','xor','auth','ping','sync','handshake','port-scan','inject','seed','running','payload'];
+  return words[Math.floor(Math.random()*words.length)] + '... id:' + Math.floor(Math.random()*99999);
+}
+
+/* reveal calendar only if adminSession or hackUnlocked */
+function revealCalendar(){
+  if(!isAdminSession && !hackUnlocked) return;
+  lockedScreen.style.display = 'none';
+  calendarApp.style.display = 'block';
+  initializeCalendar();
+}
+
+/* Locking (Lock button) - simply reloads page to reset in-memory flags */
+logoutBtn.addEventListener('click', ()=> location.reload());
+
+/* ===== Calendar logic (same as before) ===== */
 openAdd.addEventListener('click', ()=> openAddModal());
 closeModal.addEventListener('click', ()=> modalBg.style.display='none');
 saveEventBtn.addEventListener('click', saveEvent);
+document.getElementById('prevMonth').addEventListener('click', ()=> { viewDate.setMonth(viewDate.getMonth()-1); renderCalendar(); });
+document.getElementById('nextMonth').addEventListener('click', ()=> { viewDate.setMonth(viewDate.getMonth()+1); renderCalendar(); });
+document.getElementById('jumpToday').addEventListener('click', ()=> { viewDate = new Date(); selectedDate = new Date(); renderCalendar(); updateSelectedDate(); });
 
 function fillYearMonthDaySelectors(y,m,d){
   selYear.innerHTML='';
@@ -239,9 +337,61 @@ function fillYearMonthDaySelectors(y,m,d){
 }
 function populateDays(y,m,selectedD){ selDay.innerHTML=''; const days = new Date(y,m+1,0).getDate(); for(let dd=1; dd<=days; dd++){ const opt=document.createElement('option'); opt.value=dd; opt.textContent=dd; if(dd===selectedD) opt.selected=true; selDay.appendChild(opt);} }
 
-function openAddModal(editObj){ modalBg.style.display='flex'; document.getElementById('modalTitle').textContent = editObj ? 'Edit Event' : 'Add Event'; document.getElementById('evtTitle').value = editObj ? editObj.title : ''; document.getElementById('evtDesc').value = editObj ? editObj.description : ''; const y = editObj ? editObj.year : selectedDate.getFullYear(); const m = editObj ? editObj.month : selectedDate.getMonth(); const d = editObj ? editObj.day : selectedDate.getDate(); fillYearMonthDaySelectors(y,m,d); document.getElementById('evtTime').value = editObj ? editObj.time : (('00'+selectedDate.getHours()).slice(-2)+':'+('00'+selectedDate.getMinutes()).slice(-2)); document.getElementById('saveEvent').dataset.editId = editObj ? editObj.id : ''; }
+function populateTimeSelectors(){
+  const selH = document.getElementById('selHour');
+  const selM = document.getElementById('selMinute');
+  if(!selH || !selM) return;
+  if(selH.options.length===0){
+    selH.innerHTML=''; for(let h=1; h<=12; h++){ const opt=document.createElement('option'); opt.value=String(h); opt.textContent=h; selH.appendChild(opt); }
+    selM.innerHTML=''; for(let mm=0; mm<60; mm++){ const opt=document.createElement('option'); const s=('00'+mm).slice(-2); opt.value=s; opt.textContent=s; selM.appendChild(opt); }
+  }
+}
 
-function saveEvent(){ const title = document.getElementById('evtTitle').value.trim(); const desc = document.getElementById('evtDesc').value.trim(); const year = parseInt(selYear.value,10); const month = parseInt(selMonth.value,10); const day = parseInt(selDay.value,10); let time = document.getElementById('evtTime').value.trim(); if(!/^\d{1,2}:\d{2}$/.test(time)){ alert('Time format must be HH:MM'); return; } const parts = time.split(':'); const hh = Math.max(0, Math.min(23, parseInt(parts[0],10))); const mm = Math.max(0, Math.min(59, parseInt(parts[1],10))); time = pad(hh)+':'+pad(mm); if(title.length===0){ alert('Please add a title'); return; } const editId = document.getElementById('saveEvent').dataset.editId; if(editId){ db.ref('calendarEvents/' + editId).update({ title, description: desc, year, month, day, time, updatedAt: Date.now() }); modalBg.style.display='none'; document.getElementById('saveEvent').dataset.editId = ''; } else { const newRef = db.ref('calendarEvents').push(); newRef.set({ title, description: desc, year, month, day, time, createdAt: Date.now() }); modalBg.style.display='none'; } }
+function parseTimeToMinutes(t){ if(!t || t==='N/A') return 99999; const m = t.match(/(\d{1,2}):(\d{2})(?:\s*(AM|PM))?/i); if(!m) return 99999; let hh = parseInt(m[1],10); const mm = parseInt(m[2],10); const ampm = m[3]; if(ampm){ if(ampm.toUpperCase()==='AM'){ if(hh===12) hh=0; } else { if(hh!==12) hh += 12; } } return hh*60 + mm; }
+
+function openAddModal(editObj){
+  modalBg.style.display='flex';
+  document.getElementById('modalTitle').textContent = editObj ? 'Edit Event' : 'Add Event';
+  document.getElementById('evtTitle').value = editObj ? editObj.title : '';
+  document.getElementById('evtDesc').value = editObj ? editObj.description : '';
+  const y = editObj ? editObj.year : selectedDate.getFullYear();
+  const m = editObj ? editObj.month : selectedDate.getMonth();
+  const d = editObj ? editObj.day : selectedDate.getDate();
+  fillYearMonthDaySelectors(y,m,d);
+  populateTimeSelectors();
+  if(editObj && editObj.time){
+    const t = editObj.time;
+    if(t === 'N/A'){
+      document.getElementById('selAmPm').value = 'N/A';
+    } else if(/AM|PM/i.test(t)){
+      const parts = t.split(' '); const hm = parts[0].split(':'); document.getElementById('selHour').value = String(parseInt(hm[0],10)); document.getElementById('selMinute').value = hm[1]; document.getElementById('selAmPm').value = (parts[1]||'AM').toUpperCase();
+    } else if(/^\d{1,2}:\d{2}$/.test(t)){
+      const parts = t.split(':'); let hh = parseInt(parts[0],10); const mm = parts[1]; const ampm = hh>=12 ? 'PM' : 'AM'; hh = hh % 12; if(hh===0) hh=12; document.getElementById('selHour').value = String(hh); document.getElementById('selMinute').value = mm; document.getElementById('selAmPm').value = ampm;
+    } else {
+      const hh24 = selectedDate.getHours(); let hh = hh24 % 12; if(hh===0) hh=12; document.getElementById('selHour').value = String(hh); document.getElementById('selMinute').value = ('00'+selectedDate.getMinutes()).slice(-2); document.getElementById('selAmPm').value = 'AM';
+    }
+  } else {
+    const hh24 = selectedDate.getHours(); let hh = hh24 % 12; if(hh===0) hh=12; document.getElementById('selHour').value = String(hh); document.getElementById('selMinute').value = ('00'+selectedDate.getMinutes()).slice(-2); document.getElementById('selAmPm').value = 'AM';
+  }
+  document.getElementById('saveEvent').dataset.editId = editObj ? editObj.id : '';
+}
+
+function saveEvent(){
+  const title = document.getElementById('evtTitle').value.trim();
+  const desc = document.getElementById('evtDesc').value.trim();
+  const year = parseInt(selYear.value,10);
+  const month = parseInt(selMonth.value,10);
+  const day = parseInt(selDay.value,10);
+  const hour = document.getElementById('selHour').value;
+  const minute = document.getElementById('selMinute').value;
+  const ampm = document.getElementById('selAmPm').value;
+  let time;
+  if(ampm === 'N/A') time = 'N/A'; else time = String(hour).padStart(2,'0') + ':' + minute + ' ' + ampm;
+  if(title.length===0){ alert('Please add a title'); return; }
+  const editId = document.getElementById('saveEvent').dataset.editId;
+  if(editId){ db.ref('calendarEvents/' + editId).update({ title, description: desc, year, month, day, time, updatedAt: Date.now() }); modalBg.style.display='none'; document.getElementById('saveEvent').dataset.editId = ''; }
+  else { const newRef = db.ref('calendarEvents').push(); newRef.set({ title, description: desc, year, month, day, time, createdAt: Date.now() }); modalBg.style.display='none'; }
+}
 
 function listenEvents(){ const ref = db.ref('calendarEvents'); ref.on('value', snap => { const val = snap.val() || {}; eventsCache = {}; Object.keys(val).forEach(id => { eventsCache[id] = Object.assign({ id }, val[id]); }); renderCalendar(); updateSelectedDate(); }); }
 
@@ -249,7 +399,9 @@ function renderCalendar(){ daysGrid.innerHTML=''; const y = viewDate.getFullYear
 
 function hasEventsOn(year,month,day){ for(const id in eventsCache){ const e = eventsCache[id]; if(e.year===year && e.month===month && e.day===day) return true; } return false; }
 
-function updateSelectedDate(){ selectedDateLabel.textContent = selectedDate.toDateString(); fillYearMonthDaySelectors(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()); const arr = []; for(const id in eventsCache){ const e = eventsCache[id]; if(e.year===selectedDate.getFullYear() && e.month===selectedDate.getMonth() && e.day===selectedDate.getDate()){ arr.push(Object.assign({id}, e)); } } arr.sort((a,b)=> (a.time||'00:00').localeCompare(b.time||'00:00')); eventsList.innerHTML=''; if(arr.length===0) eventsList.innerHTML = '<div class="mutedSmall">No events for selected date.</div>'; arr.forEach(e => { const div=document.createElement('div'); div.className='eventItem'; div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${escapeHtml(e.title)}</strong><div class="small">${e.time || ''}</div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="codeBtn" style="padding:6px 8px;font-size:12px" onclick="viewEvent('${e.id}')">View</button><button class="codeBtn" style="padding:6px 8px;font-size:12px;background:#222;color:#fff" onclick="editEvent('${e.id}')">Edit</button><button class="codeBtn" style="padding:6px 8px;font-size:12px;background:transparent;border:1px solid rgba(255,255,255,0.06)" onclick="deleteEvent('${e.id}')">Delete</button></div></div><div class="small" style="margin-top:6px">${escapeHtml(e.description || '')}</div>`; eventsList.appendChild(div); }); }
+function updateSelectedDate(){ selectedDateLabel.textContent = selectedDate.toDateString(); fillYearMonthDaySelectors(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()); const arr = []; for(const id in eventsCache){ const e = eventsCache[id]; if(e.year===selectedDate.getFullYear() && e.month===selectedDate.getMonth() && e.day===selectedDate.getDate()){ arr.push(Object.assign({id}, e)); } }
+  arr.sort((a,b)=>{ const ta = a.time || 'N/A'; const tb = b.time || 'N/A'; const ma = parseTimeToMinutes(ta); const mb = parseTimeToMinutes(tb); return ma - mb; });
+  eventsList.innerHTML=''; if(arr.length===0) eventsList.innerHTML = '<div class="small">No events for selected date.</div>'; arr.forEach(e => { const div=document.createElement('div'); div.className='eventItem'; div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${escapeHtml(e.title)}</strong><div class="small">${e.time || ''}</div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="codeBtn" style="padding:6px 8px;font-size:12px" onclick="viewEvent('${e.id}')">View</button><button class="codeBtn" style="padding:6px 8px;font-size:12px;background:#222;color:#fff" onclick="editEvent('${e.id}')">Edit</button><button class="codeBtn" style="padding:6px 8px;font-size:12px;background:transparent;border:1px solid rgba(255,255,255,0.06)" onclick="deleteEvent('${e.id}')">Delete</button></div></div><div class="small" style="margin-top:6px">${escapeHtml(e.description || '')}</div>`; eventsList.appendChild(div); }); }
 
 window.viewEvent = function(id){ const e = eventsCache[id]; if(!e) return alert('Event not found'); alert(`Title: ${e.title}\nTime: ${e.time}\nDate: ${e.year}-${e.month+1}-${e.day}\n\n${e.description || ''}`); }
 window.editEvent = function(id){ const e = eventsCache[id]; if(!e) return alert('Event not found'); openAddModal(Object.assign({ id }, e)); }
@@ -259,7 +411,8 @@ function initializeCalendar(){ if(calendarInitialized) return; calendarInitializ
 
 function escapeHtml(str){ return String(str).replace(/[&<>\"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
 
-window.addEventListener('load', ()=> { /* nothing extra */ });
+// On load: locked by default; no storage used so refresh always locks again
+window.addEventListener('load', ()=> { /* nothing to persist — user must re-unlock after refresh */ });
 </script>
 </body>
 </html>
