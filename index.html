@@ -14,6 +14,8 @@
     --white:#fff;
     --card:#071126;
     --glass: rgba(255,255,255,0.03);
+    --black-event: #000000;
+    --delete-red: #dc2626;
   }
   html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--white)}
   .centerWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box}
@@ -40,19 +42,21 @@
   .today{box-shadow:0 0 0 2px rgba(6,182,212,0.12);border-radius:8px}
   .hasEventDot{position:absolute;right:8px;bottom:8px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
   .eventPreview{display:flex;flex-direction:column;gap:6px;max-height:56px;overflow:hidden}
-  .evSnippet{font-size:12px;opacity:0.95;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;padding:4px 8px;border-radius:8px;background:rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.02)}
+  .evSnippet{font-size:12px;opacity:0.95;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02)}
   .evSnippet.small{font-size:11px;padding:3px 6px}
 
   .sidebar{background:var(--card);padding:12px;border-radius:12px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(2,8,23,0.6)}
   .addBtn{background:var(--accent);color:#012;border:0;padding:10px;border-radius:8px;cursor:pointer;font-weight:800;margin-bottom:10px}
   .list{overflow:auto;flex:1;padding-right:6px}
-  .eventItem{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:10px;border-radius:10px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02)}
+  /* each event full black background */
+  .eventItem{background:var(--black-event);padding:10px;border-radius:10px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03)}
   .eventLeft{flex:1}
   .eventMeta{font-size:12px;color:var(--muted);margin-top:6px}
   .btnRow{display:flex;gap:8px;flex-direction:column}
   .smallBtn{padding:6px 8px;border-radius:8px;border:0;cursor:pointer;font-weight:700;font-size:12px}
   .smallBtn.edit{background:#222;color:#fff}
-  .smallBtn.delete{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+  .smallBtn.delete{background:var(--delete-red);color:#fff;border:0}
+  .smallBtn.delete:hover{filter:brightness(.95);transform:translateY(-1px)}
   .lockedBadge{font-size:11px;padding:4px 6px;border-radius:999px;background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.03);color:var(--muted);margin-left:8px}
 
   /* modal */
@@ -87,7 +91,6 @@
         <button class="codeBtn" id="enterCodeBtn">Enter Admin Code</button>
         <button class="codeBtn" id="startHackBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--accent-2)">Hack (Simulated)</button>
       </div>
-      <div style="margin-top:14px;color:#93a2b3;font-size:13px">Admin code: <strong>246</strong></div>
     </div>
   </div>
 
@@ -95,7 +98,7 @@
     <div class="header">
       <div>
         <div class="monthYear" id="monthYearLabel">Month Year</div>
-        <div class="small">Admin view — add, edit and delete events <span class="lockedBadge">Edit/Delete require code </span></div>
+        <div class="small">Admin view — add, edit and delete events <span class="lockedBadge">Edit/Delete locked</span></div>
       </div>
       <div class="nav">
         <button id="prevMonth">&larr;</button>
@@ -179,7 +182,7 @@
   <div class="modal">
     <div style="font-weight:800;margin-bottom:6px">Enter Admin Code</div>
     <div class="formRow">
-      <input id="adminCodeInput" placeholder="Enter code (e.g. 246)" />
+      <input id="adminCodeInput" placeholder="Enter admin code" />
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
       <button class="codeBtn" id="closeCodeModal" style="background:#111;color:#fff">Cancel</button>
@@ -188,12 +191,12 @@
   </div>
 </div>
 
-<!-- add-event code modal (locks the Add button with code 246 in original version) -->
+<!-- add-event code modal -->
 <div class="modalBg" id="addCodeModal">
   <div class="modal">
     <div style="font-weight:800;margin-bottom:6px">Enter Add-Event Code</div>
     <div class="formRow">
-      <input id="addCodeInput" placeholder="Enter code to add events" />
+      <input id="addCodeInput" placeholder="Enter add-event code" />
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
       <button class="codeBtn" id="closeAddCodeModal" style="background:#111;color:#fff">Cancel</button>
@@ -306,7 +309,6 @@ submitCode.addEventListener('click', ()=> {
     isAdminSession = true;
     codeModal.style.display = 'none';
     revealCalendar();
-    // If an action was waiting, run it now:
     if(typeof pendingAction === 'function'){
       const fn = pendingAction; pendingAction = null;
       try{ fn(); } catch(e){ console.error(e); }
@@ -318,7 +320,6 @@ submitCode.addEventListener('click', ()=> {
 });
 
 /* ===== Add-Event code flow (locks the + Add event button) ===== */
-// When user clicks + Add event, require code unless addUnlocked is true
 openAdd.addEventListener('click', ()=> {
   if(addUnlocked){ openAddModal(); return; }
   addCodeModal.style.display = 'flex';
@@ -328,7 +329,7 @@ openAdd.addEventListener('click', ()=> {
 closeAddCodeModal && closeAddCodeModal.addEventListener('click', ()=> addCodeModal.style.display='none');
 submitAddCode.addEventListener('click', ()=> {
   const v = addCodeInput.value.trim();
-  if(v === '246'){ // keep as 246 for consistency
+  if(v === '246'){ // code check remains internal
     addUnlocked = true;
     addCodeModal.style.display = 'none';
     openAddModal();
@@ -521,7 +522,7 @@ function updateSelectedDate(){
       const doEdit = ()=> { const obj = eventsCache[e.id]; if(!obj) return alert('Event not found'); openAddModal(Object.assign({ id: e.id }, obj)); };
       if(!isAdminSession){ pendingAction = doEdit; codeModal.style.display='flex'; adminCodeInput.value=''; adminCodeInput.focus(); } else doEdit();
     });
-    // Delete button (locked)
+    // Delete button (locked and red)
     const btnDelete = document.createElement('button'); btnDelete.className='smallBtn delete'; btnDelete.textContent = 'Delete';
     btnDelete.addEventListener('click', (ev)=>{
       ev.stopPropagation();
