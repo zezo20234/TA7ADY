@@ -215,7 +215,7 @@
     <div id="terminalLines" style="min-height:80px">
       <div>Initializing hack sequence...</div>
       <div class="greenNum" id="greenCount">0%</div>
-      <div class="small" id="timeLeft">7:00 remaining</div>
+      <div class="small" id="timeLeft">5:00 remaining</div>
     </div>
     <div class="progressBar"><div class="progressFill" id="progressFill"></div></div>
     <div style="display:flex;justify-content:space-between;align-items:center">
@@ -248,7 +248,7 @@ const db = firebase.database();
 let isAdminSession = false; // cleared on refresh
 let hackUnlocked = false;   // cleared on refresh
 let addUnlocked = false;    // add-event permission
-const HACK_SECONDS = 7 * 60; // 7 minutes simulated
+const HACK_SECONDS = 5 * 60; // changed: simulated hack now runs 5 minutes
 let hackInterval = null;
 let pendingAction = null;    // store action that requires admin code
 
@@ -369,7 +369,7 @@ function stopHackSimulation(asCancel){
   hackOverlay.style.display = 'none';
   progressFill.style.width = '0%';
   greenCount.textContent = '0%';
-  timeLeftLabel.textContent = '7:00 remaining';
+  timeLeftLabel.textContent = '5:00 remaining';
   termLog.textContent = asCancel ? 'Hack aborted.' : '';
 }
 
