@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Locked Calendar — asks again after refresh</title>
+<title>Locked Calendar — asks code before delete confirm</title>
 <style>
   :root{
     --bg:#0b1220;
@@ -57,6 +57,7 @@
   .smallBtn.edit{background:#222;color:#fff}
   .smallBtn.delete{background:var(--delete-red);color:#fff;border:0}
   .smallBtn.delete:hover{filter:brightness(.95);transform:translateY(-1px)}
+  .smallBtn.locked{opacity:0.7;filter:grayscale(.2)}
   .lockedBadge{font-size:11px;padding:4px 6px;border-radius:999px;background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.03);color:var(--muted);margin-left:8px}
 
   /* modal */
@@ -65,6 +66,10 @@
   .formRow{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
   input,textarea,select{background:#071126;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;color:var(--white);outline:0}
   textarea{min-height:80px;resize:vertical}
+
+  /* small confirm modal styles */
+  .confirmContent{min-width:320px;text-align:center}
+  .confirmActions{display:flex;gap:8px;justify-content:center;margin-top:12px}
 
   /* hack overlay */
   .hackOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:60;color:var(--accent-2)}
@@ -98,7 +103,7 @@
     <div class="header">
       <div>
         <div class="monthYear" id="monthYearLabel">Month Year</div>
-        <div class="small">Admin view — add, edit and delete events <span class="lockedBadge">Edit/Delete locked</span></div>
+        <div class="small">Admin view — add, edit and delete events <span class="lockedBadge" id="globalLockBadge">Edit/Delete locked</span></div>
       </div>
       <div class="nav">
         <button id="prevMonth">&larr;</button>
@@ -177,12 +182,12 @@
   </div>
 </div>
 
-<!-- admin code modal -->
+<!-- admin / edit-delete code modal -->
 <div class="modalBg" id="codeModal">
   <div class="modal">
-    <div style="font-weight:800;margin-bottom:6px">Enter Admin Code</div>
+    <div style="font-weight:800;margin-bottom:6px" id="codeModalTitle">Enter Admin Code</div>
     <div class="formRow">
-      <input id="adminCodeInput" placeholder="Enter admin code" />
+      <input id="adminCodeInput" placeholder="Enter code" />
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
       <button class="codeBtn" id="closeCodeModal" style="background:#111;color:#fff">Cancel</button>
@@ -201,6 +206,18 @@
     <div style="display:flex;justify-content:flex-end;gap:8px">
       <button class="codeBtn" id="closeAddCodeModal" style="background:#111;color:#fff">Cancel</button>
       <button class="codeBtn" id="submitAddCode" style="background:var(--accent);color:#012">Unlock Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- custom confirm modal (used after 222 accepted for deletes) -->
+<div class="modalBg" id="confirmModal">
+  <div class="modal confirmContent">
+    <div style="font-weight:800">Confirm deletion</div>
+    <div class="small" style="margin-top:8px">Do you really want to delete this event?</div>
+    <div class="confirmActions">
+      <button class="codeBtn" id="confirmNo" style="background:#111;color:#fff;padding:8px 12px">No</button>
+      <button class="codeBtn" id="confirmYes" style="background:var(--delete-red);color:#fff;padding:8px 12px">Yes, delete</button>
     </div>
   </div>
 </div>
@@ -248,9 +265,12 @@ const db = firebase.database();
 let isAdminSession = false; // cleared on refresh
 let hackUnlocked = false;   // cleared on refresh
 let addUnlocked = false;    // add-event permission
-const HACK_SECONDS = 5 * 60; // changed: simulated hack now runs 5 minutes
+const HACK_SECONDS = 5 * 60; // simulated hack now runs 5 minutes
 let hackInterval = null;
-let pendingAction = null;    // store action that requires admin code
+let pendingAction = null;    // generic pending action (for edits)
+let pendingActionType = null; // 'admin' | 'edit' | 'delete' | 'add'
+let pendingDeleteId = null;  // id of the event waiting for confirm after 222
+let editDeleteUnlockedForAction = false; // temporary flag set when correct 222 entered
 
 /* ===== UI refs ===== */
 const lockedScreen = document.getElementById('lockedScreen');
@@ -261,6 +281,7 @@ const codeModal = document.getElementById('codeModal');
 const closeCodeModal = document.getElementById('closeCodeModal');
 const submitCode = document.getElementById('submitCode');
 const adminCodeInput = document.getElementById('adminCodeInput');
+const codeModalTitle = document.getElementById('codeModalTitle');
 const logoutBtn = document.getElementById('logoutBtn');
 
 const addCodeModal = document.getElementById('addCodeModal');
@@ -274,6 +295,12 @@ const timeLeftLabel = document.getElementById('timeLeft');
 const progressFill = document.getElementById('progressFill');
 const termLog = document.getElementById('termLog');
 const cancelHack = document.getElementById('cancelHack');
+
+const confirmModal = document.getElementById('confirmModal');
+const confirmYes = document.getElementById('confirmYes');
+const confirmNo = document.getElementById('confirmNo');
+
+const globalLockBadge = document.getElementById('globalLockBadge');
 
 /* calendar refs */
 const daysGrid = document.getElementById('daysGrid');
@@ -297,18 +324,55 @@ function pad(n){return (n<10? '0':'')+n}
 
 /* ===== Admin code flow (no persistence) ===== */
 enterCodeBtn.addEventListener('click', ()=> {
+  pendingActionType = 'admin';
+  codeModalTitle.textContent = 'Enter Admin Code';
   codeModal.style.display='flex';
   adminCodeInput.value='';
   adminCodeInput.focus();
 });
-closeCodeModal && closeCodeModal.addEventListener('click', ()=> { codeModal.style.display='none'; pendingAction = null; });
+closeCodeModal && closeCodeModal.addEventListener('click', ()=> { codeModal.style.display='none'; pendingAction = null; pendingActionType = null; editDeleteUnlockedForAction = false; pendingDeleteId = null; });
 
 submitCode.addEventListener('click', ()=> {
   const v = adminCodeInput.value.trim();
+
+  // If the pending action specifically requested edit (open edit modal)
+  if(pendingActionType === 'edit'){
+    if(v === '222' || v === '246'){ // allow full admin (246) or separate edit-delete code (222)
+      editDeleteUnlockedForAction = true;
+      codeModal.style.display = 'none';
+      const fn = pendingAction; pendingAction = null; pendingActionType = null;
+      try{ if(typeof fn === 'function') fn(); } catch(e){ console.error(e); }
+      // clear temporary flag after action may be performed by fn (fn should clear if needed)
+      editDeleteUnlockedForAction = false;
+      alert('Code accepted — you may edit this event now. Refresh to lock again.');
+    } else {
+      alert('Wrong code for editing');
+    }
+    return;
+  }
+
+  // If the pending action was a delete, accept code 222 (or admin 246)
+  if(pendingActionType === 'delete'){
+    if(v === '222' || v === '246'){
+      // close code modal, then show custom confirm modal
+      editDeleteUnlockedForAction = true; // allow delete once after confirm yes
+      codeModal.style.display = 'none';
+      pendingActionType = 'delete:confirm';
+      // show confirm modal
+      confirmModal.style.display = 'flex';
+    } else {
+      alert('Wrong code for delete');
+    }
+    return;
+  }
+
+  // Default: admin flow (code 246) — full admin session
   if(v === '246'){
     isAdminSession = true;
     codeModal.style.display = 'none';
+    pendingActionType = null;
     revealCalendar();
+    applyAdminUI();
     if(typeof pendingAction === 'function'){
       const fn = pendingAction; pendingAction = null;
       try{ fn(); } catch(e){ console.error(e); }
@@ -319,9 +383,45 @@ submitCode.addEventListener('click', ()=> {
   }
 });
 
+/* helper: apply admin UI changes (badge text and per-button styles) */
+function applyAdminUI(){
+  if(isAdminSession){
+    globalLockBadge.textContent = 'Edit/Delete unlocked';
+  } else {
+    globalLockBadge.textContent = 'Edit/Delete locked';
+  }
+  // re-render to refresh button appearances
+  renderCalendar();
+  updateSelectedDate();
+}
+
+/* ===== confirm modal handlers ===== */
+confirmNo.addEventListener('click', ()=> {
+  confirmModal.style.display = 'none';
+  // clear temporary state
+  editDeleteUnlockedForAction = false;
+  pendingDeleteId = null;
+  pendingActionType = null;
+});
+confirmYes.addEventListener('click', ()=> {
+  confirmModal.style.display = 'none';
+  if(!pendingDeleteId){
+    editDeleteUnlockedForAction = false;
+    pendingActionType = null;
+    return;
+  }
+  // perform delete (only allowed because editDeleteUnlockedForAction or admin)
+  db.ref('calendarEvents/' + pendingDeleteId).remove();
+  // clear temp state
+  editDeleteUnlockedForAction = false;
+  pendingDeleteId = null;
+  pendingActionType = null;
+});
+
 /* ===== Add-Event code flow (locks the + Add event button) ===== */
 openAdd.addEventListener('click', ()=> {
   if(addUnlocked){ openAddModal(); return; }
+  pendingActionType = 'add';
   addCodeModal.style.display = 'flex';
   addCodeInput.value = '';
   addCodeInput.focus();
@@ -377,7 +477,8 @@ function completeHack(){
   stopHackSimulation(false);
   hackUnlocked = true;
   revealCalendar();
-  alert('Hack complete — calendar visible for this session. Refresh to lock again.');
+  // do NOT grant admin simply from hack: keep edit/delete locked until proper code entered
+  alert('Hack complete — calendar visible for this session. Edit/Delete still require their code (222) or full admin (246). Refresh to lock again.');
 }
 
 function fakeLine(){
@@ -391,13 +492,18 @@ function revealCalendar(){
   lockedScreen.style.display = 'none';
   calendarApp.style.display = 'block';
   initializeCalendar();
+  applyAdminUI();
 }
 
 /* Lock button - simply reloads page to reset in-memory flags */
 logoutBtn.addEventListener('click', ()=> location.reload());
 
 /* ===== Calendar logic ===== */
-closeModal.addEventListener('click', ()=> modalBg.style.display='none');
+closeModal.addEventListener('click', ()=> {
+  modalBg.style.display='none';
+  // If the user cancels an edit operation, clear the temporary edit flag
+  editDeleteUnlockedForAction = false;
+});
 saveEventBtn.addEventListener('click', saveEvent);
 document.getElementById('prevMonth').addEventListener('click', ()=> { viewDate.setMonth(viewDate.getMonth()-1); renderCalendar(); });
 document.getElementById('nextMonth').addEventListener('click', ()=> { viewDate.setMonth(viewDate.getMonth()+1); renderCalendar(); });
@@ -426,6 +532,18 @@ function populateTimeSelectors(){
 function parseTimeToMinutes(t){ if(!t || t==='N/A') return 99999; const m = t.match(/(\d{1,2}):(\d{2})(?:\s*(AM|PM))?/i); if(!m) return 99999; let hh = parseInt(m[1],10); const mm = parseInt(m[2],10); const ampm = m[3]; if(ampm){ if(ampm.toUpperCase()==='AM'){ if(hh===12) hh=0; } else { if(hh!==12) hh += 12; } } return hh*60 + mm; }
 
 function openAddModal(editObj){
+  // Editing should be protected by the edit/delete code (222) unless full admin is active.
+  if(editObj && !isAdminSession){
+    // store pending edit action and prompt 222
+    pendingAction = ()=> openAddModal(editObj);
+    pendingActionType = 'edit';
+    codeModalTitle.textContent = 'Enter Edit/Delete Code';
+    codeModal.style.display='flex';
+    adminCodeInput.value='';
+    adminCodeInput.focus();
+    return;
+  }
+
   modalBg.style.display='flex';
   document.getElementById('modalTitle').textContent = editObj ? 'Edit Event' : 'Add Event';
   document.getElementById('evtTitle').value = editObj ? editObj.title : '';
@@ -465,8 +583,34 @@ function saveEvent(){
   if(ampm === 'N/A') time = 'N/A'; else time = String(hour).padStart(2,'0') + ':' + minute + ' ' + ampm;
   if(title.length===0){ alert('Please add a title'); return; }
   const editId = document.getElementById('saveEvent').dataset.editId;
-  if(editId){ db.ref('calendarEvents/' + editId).update({ title, description: desc, year, month, day, time, updatedAt: Date.now() }); modalBg.style.display='none'; document.getElementById('saveEvent').dataset.editId = ''; }
-  else { const newRef = db.ref('calendarEvents').push(); newRef.set({ title, description: desc, year, month, day, time, createdAt: Date.now() }); modalBg.style.display='none'; }
+  if(editId){
+    // guard server write with either full admin or temporary edit-delete code allowance
+    if(!isAdminSession && !editDeleteUnlockedForAction){
+      pendingAction = ()=> saveEvent();
+      pendingActionType = 'edit';
+      codeModalTitle.textContent = 'Enter Edit/Delete Code';
+      codeModal.style.display='flex';
+      adminCodeInput.value='';
+      adminCodeInput.focus();
+      return;
+    }
+    db.ref('calendarEvents/' + editId).update({ title, description: desc, year, month, day, time, updatedAt: Date.now() });
+    modalBg.style.display='none';
+    document.getElementById('saveEvent').dataset.editId = '';
+    // clear single-action flag after performing the write
+    editDeleteUnlockedForAction = false;
+  } else {
+    if(!addUnlocked){
+      pendingAction = ()=> saveEvent();
+      addCodeModal.style.display='flex';
+      addCodeInput.value='';
+      addCodeInput.focus();
+      return;
+    }
+    const newRef = db.ref('calendarEvents').push();
+    newRef.set({ title, description: desc, year, month, day, time, createdAt: Date.now() });
+    modalBg.style.display='none';
+  }
 }
 
 /* listen to events in firebase and cache them */
@@ -515,19 +659,56 @@ function updateSelectedDate(){
     const left = document.createElement('div'); left.className='eventLeft';
     left.innerHTML = `<div style="font-weight:800">${escapeHtml(e.title)}</div><div class="eventMeta">${e.time || ''} — ${selectedDate.getFullYear()}-${(selectedDate.getMonth()+1)}-${selectedDate.getDate()}</div><div class="small" style="margin-top:8px">${escapeHtml(e.description || '')}</div>`;
     const br = document.createElement('div'); br.className='btnRow';
-    // Edit button (locked)
-    const btnEdit = document.createElement('button'); btnEdit.className='smallBtn edit'; btnEdit.textContent = 'Edit';
+
+    // Edit button: ALWAYS attach handler — gate inside handler (now uses code 222 if not admin)
+    const btnEdit = document.createElement('button');
+    btnEdit.className='smallBtn edit';
+    btnEdit.innerText = isAdminSession ? 'Edit' : '🔒 Edit';
+    if(!isAdminSession) btnEdit.classList.add('locked');
     btnEdit.addEventListener('click', (ev)=>{
       ev.stopPropagation();
       const doEdit = ()=> { const obj = eventsCache[e.id]; if(!obj) return alert('Event not found'); openAddModal(Object.assign({ id: e.id }, obj)); };
-      if(!isAdminSession){ pendingAction = doEdit; codeModal.style.display='flex'; adminCodeInput.value=''; adminCodeInput.focus(); } else doEdit();
+      if(!isAdminSession){
+        // store pending action and prompt for edit/delete code (222)
+        pendingAction = doEdit;
+        pendingActionType = 'edit';
+        codeModalTitle.textContent = 'Enter Edit/Delete Code';
+        codeModal.style.display='flex';
+        adminCodeInput.value='';
+        adminCodeInput.focus();
+        return;
+      }
+      doEdit();
     });
-    // Delete button (locked and red)
-    const btnDelete = document.createElement('button'); btnDelete.className='smallBtn delete'; btnDelete.textContent = 'Delete';
+
+    // Delete button: ALWAYS attach handler — gate inside handler (now uses code 222 if not admin),
+    // and confirmation shown only after code accepted.
+    const btnDelete = document.createElement('button');
+    btnDelete.className='smallBtn delete';
+    btnDelete.innerText = isAdminSession ? 'Delete' : '🔒 Delete';
+    if(!isAdminSession) btnDelete.classList.add('locked');
     btnDelete.addEventListener('click', (ev)=>{
       ev.stopPropagation();
-      const doDelete = ()=> { if(!confirm('Delete this event?')) return; db.ref('calendarEvents/' + e.id).remove(); };
-      if(!isAdminSession){ pendingAction = doDelete; codeModal.style.display='flex'; adminCodeInput.value=''; adminCodeInput.focus(); } else doDelete();
+      const doDelete = ()=> {
+        // (not used directly for non-admin) admin path will show confirm immediately
+        if(!confirm('Delete this event?')) return;
+        db.ref('calendarEvents/' + e.id).remove();
+      };
+
+      if(!isAdminSession){
+        // set pending delete id and show code modal first
+        pendingDeleteId = e.id;
+        pendingActionType = 'delete';
+        codeModalTitle.textContent = 'Enter Edit/Delete Code';
+        codeModal.style.display='flex';
+        adminCodeInput.value='';
+        adminCodeInput.focus();
+        return;
+      }
+
+      // admin path: ask confirm immediately for admins
+      if(!confirm('Delete this event?')) return;
+      db.ref('calendarEvents/' + e.id).remove();
     });
 
     br.appendChild(btnEdit);
@@ -541,19 +722,42 @@ function updateSelectedDate(){
 
 /* expose viewEvent, editEvent, deleteEvent but ensure admin gating */
 window.viewEvent = function(id){ const e = eventsCache[id]; if(!e) return alert('Event not found'); alert(`Title: ${e.title}\nTime: ${e.time}\nDate: ${e.year}-${e.month+1}-${e.day}\n\n${e.description || ''}`); }
+
 window.editEvent = function(id){
   const doEdit = ()=> { const e = eventsCache[id]; if(!e) return alert('Event not found'); openAddModal(Object.assign({ id }, e)); };
-  if(!isAdminSession){ pendingAction = doEdit; codeModal.style.display='flex'; adminCodeInput.value=''; adminCodeInput.focus(); } else doEdit();
+  if(!isAdminSession){
+    pendingAction = doEdit;
+    pendingActionType = 'edit';
+    codeModalTitle.textContent = 'Enter Edit/Delete Code';
+    codeModal.style.display='flex';
+    adminCodeInput.value='';
+    adminCodeInput.focus();
+    return;
+  }
+  doEdit();
 }
+
 window.deleteEvent = function(id){
-  const doDelete = ()=> { if(!confirm('Delete this event?')) return; db.ref('calendarEvents/' + id).remove(); };
-  if(!isAdminSession){ pendingAction = doDelete; codeModal.style.display='flex'; adminCodeInput.value=''; adminCodeInput.focus(); } else doDelete();
+  const doDelete = ()=> {
+    if(!confirm('Delete this event?')) return;
+    db.ref('calendarEvents/' + id).remove();
+  };
+  if(!isAdminSession){
+    pendingDeleteId = id;
+    pendingActionType = 'delete';
+    codeModalTitle.textContent = 'Enter Edit/Delete Code';
+    codeModal.style.display='flex';
+    adminCodeInput.value='';
+    adminCodeInput.focus();
+    return;
+  }
+  doDelete();
 }
 
 /* initialize calendar once */
 function initializeCalendar(){ if(calendarInitialized) return; calendarInitialized=true; renderCalendar(); updateSelectedDate(); listenEvents(); }
 
-function escapeHtml(str){ return String(str).replace(/[&<>\"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
+function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
 
 /* On load: calendar locked by default; no storage used so refresh always locks again */
 window.addEventListener('load', ()=> { /* nothing persistent */ });
