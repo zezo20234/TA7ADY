@@ -62,7 +62,7 @@
         <button class="codeBtn" id="enterCodeBtn">Enter Admin Code</button>
         <button class="codeBtn" id="startHackBtn" style="background:#082018;color:var(--success)">Hack (Simulated)</button>
       </div>
-      <div style="margin-top:12px;color:#666;font-size:13px">Admin code: <strong>555</strong></div>
+      <div style="margin-top:12px;color:#666;font-size:13px">Admin code: <strong></strong></div>
     </div>
   </div>
 
@@ -154,7 +154,7 @@
   <div class="modal">
     <div style="font-weight:800;margin-bottom:6px">Enter Admin Code</div>
     <div class="formRow">
-      <input id="adminCodeInput" placeholder="Enter code (e.g. 555)" />
+      <input id="adminCodeInput" placeholder="Enter code (e.g. )" />
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
       <button class="codeBtn" id="closeCodeModal" style="background:#111;color:#fff">Cancel</button>
@@ -252,7 +252,7 @@ enterCodeBtn.addEventListener('click', ()=> { codeModal.style.display='flex'; ad
 closeCodeModal && closeCodeModal.addEventListener('click', ()=> codeModal.style.display='none');
 submitCode.addEventListener('click', ()=> {
   const v = adminCodeInput.value.trim();
-  if(v === '555'){
+  if(v === '246'){
     isAdminSession = true;
     codeModal.style.display='none';
     revealCalendar();
