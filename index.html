@@ -168,7 +168,7 @@
   <div class="modal">
     <div style="font-weight:800;margin-bottom:6px">Enter Add-Event Code</div>
     <div class="formRow">
-      <input id="addCodeInput" placeholder="Enter code to add events (e.g. 555)" />
+      <input id="addCodeInput" placeholder="Enter code to add events" />
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
       <button class="codeBtn" id="closeAddCodeModal" style="background:#111;color:#fff">Cancel</button>
@@ -294,7 +294,7 @@ openAdd.addEventListener('click', ()=> {
 closeAddCodeModal && closeAddCodeModal.addEventListener('click', ()=> addCodeModal.style.display='none');
 submitAddCode.addEventListener('click', ()=> {
   const v = addCodeInput.value.trim();
-  if(v === '555'){
+  if(v === '246'){
     addUnlocked = true;
     addCodeModal.style.display = 'none';
     openAddModal();
@@ -457,3 +457,4 @@ window.addEventListener('load', ()=> { /* nothing to persist — user must re-un
 </script>
 </body>
 </html>
+
